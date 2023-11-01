@@ -1,0 +1,26 @@
+From f53f77f73199f398713f8edfdfa417cf8b9e1a74 Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Fri, 28 Oct 2022 13:14:04 -0400
+Subject: [PATCH 2/3] tuna: tuna_gui.py use fstrings
+
+Add fstrings where possible to improve readabilty
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna/tuna_gui.py b/tuna/tuna_gui.py
+index f1f2caacbcba..459f90303ed5 100755
+--- a/tuna/tuna_gui.py
++++ b/tuna/tuna_gui.py
+@@ -33,7 +33,7 @@ class main_gui:
+         if self.check_root():
+             sys.exit(1)
+         for dir in tuna_glade_dirs:
+-            tuna_glade = "%s/tuna_gui.glade" % dir
++            tuna_glade = f"{dir}/tuna_gui.glade"
+             if os.access(tuna_glade, os.F_OK):
+                 break
+         self.wtree = Gtk.Builder()
+-- 
+2.31.1
+
