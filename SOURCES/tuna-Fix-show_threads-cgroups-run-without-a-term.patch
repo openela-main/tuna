@@ -1,0 +1,42 @@
+From 4ccef8c2996e59e7031e77d7f8e2b42b73036210 Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Wed, 23 Nov 2022 14:14:36 -0500
+Subject: [PATCH] tuna: Fix show_threads --cgroups run without a term
+
+When tuna show_threads --cgroups is run without a term,
+provide a default column size of 80 to fix a traceback
+that occurred when querying the terminal size.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+- Edited the commit title
+- Edited the description
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 630c8bc..4e809dd 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -31,6 +31,7 @@ import procfs
+ from tuna import tuna, sysfs
+ import logging
+ import time
++import shutil
+ 
+ def get_loglevel(level):
+     if level.isdigit() and int(level) in range(0,5):
+@@ -440,9 +441,10 @@ def ps_show(ps, affect_children, thread_list, cpu_list,
+ 
+ 
+     # Width of terminal in columns
+-    columns = None
++    columns = 80
+     if cgroups:
+-        _, columns = os.popen('stty size', 'r').read().split()
++        if os.isatty(sys.stdout.fileno()):
++            columns = shutil.get_terminal_size().columns
+ 
+     for pid in ps_list:
+         ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info,
+-- 
+2.38.1
+

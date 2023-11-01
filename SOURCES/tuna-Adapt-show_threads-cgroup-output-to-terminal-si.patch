@@ -1,0 +1,148 @@
+From b04ce6fa8b183f6a930fbff240eff44efe801f91 Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Mon, 14 Nov 2022 14:55:08 -0500
+Subject: [PATCH] tuna: Adapt show_threads cgroup output to terminal size
+
+Passing the --cgroup flag to the show_threads command currently displays
+long cgroup strings on the thread output and decreases readability.
+
+Adapt the show_threads output to account for output string and terminal
+size, and format output accordingly to improve readability. Add
+--spaced flag to show_threads to print cgroups with spacing in
+between thread outputs.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+
+---
+target branch: main
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/docs/tuna.8 b/docs/tuna.8
+index f50a8c2a0a16..242389455f83 100644
+--- a/docs/tuna.8
++++ b/docs/tuna.8
+@@ -188,6 +188,7 @@ optional arguments:
+                         Operation will affect children threads
+   -G, --cgroups         Display the processes with the type of cgroups they
+                         are in
++  -z, --spaced          Display spaced view for cgroups
+ 
+ .TP
+ \fBtuna show_irqs\fR
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 8be35f7fb4c4..630c8bc60deb 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -114,6 +114,7 @@ def gen_parser():
+             "sockets": dict(dest='cpu_list', default=[], metavar='CPU-SOCKET-LIST', type=socketstring_to_list, help="CPU-SOCKET-LIST affected by commands"),
+             "show_sockets": dict(action='store_true', help='Show network sockets in use by threads'),
+             "cgroups": dict(action='store_true', dest='cgroups', help='Display the processes with the type of cgroups they are in'),
++            "spaced": dict(action='store_false', dest='compact', help='Display spaced view for cgroups'),
+             "affect_children": dict(action='store_true', help="Operation will affect children threads"),
+             "nohz_full": dict(action='store_true', help="CPUs in nohz_full kernel command line will be affected by operations"),
+             "no_uthreads": dict(action='store_false', dest='uthreads', help="Operations will not affect user threads"),
+@@ -215,6 +216,7 @@ def gen_parser():
+     if have_inet_diag:
+         show_threads.add_argument('-n', '--show_sockets', **MODS['show_sockets'])
+     show_threads.add_argument('-G', '--cgroups', **MODS['cgroups'])
++    show_threads.add_argument('-z', '--spaced', **MODS['spaced'])
+ 
+ 
+     show_irqs_group = show_irqs.add_mutually_exclusive_group(required=False)
+@@ -335,7 +337,7 @@ def format_affinity(affinity):
+     return ",".join(str(hex(a)) for a in procfs.hexbitmask(affinity, get_nr_cpus()))
+ 
+ def ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info, sock_inodes,
+-                   sock_inode_re, cgroups):
++                   sock_inode_re, cgroups, columns=None, compact=True):
+     global irqs
+     try:
+         affinity = format_affinity(os.sched_getaffinity(pid))
+@@ -372,10 +374,20 @@ def ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info, sock_inodes,
+                                           nonvoluntary_ctxt_switches)
+ 
+     # Indent affected children
+-    print(" %-5d " % pid if affect_children else "  %-5d" % pid, end=' ')
+-    print("%6s %5d %8s%s %15s %s" % (sched, rtprio, affinity,
+-                                     ctxt_switch_info, cmd, users), end=' ')
+-    print(" %9s" % cgout if cgroups else "")
++    s1 = " %-5d " % pid if affect_children else "  %-5d" % pid
++    print(s1, end=' ')
++    s2 = "%6s %5d %8s%s %15s     %s" % (sched, rtprio, affinity,
++                                     ctxt_switch_info, cmd, users)
++    print(s2, end=' ')
++
++    if cgroups:
++        length = int(columns) - len(s1 + " ") - len(s2 + " ")
++        if len(" %9s" % cgout) <= length:
++            print("%s" % cgout)
++        else:
++            print("\n %s" % cgout + ("" if compact else "\n"))
++    else:
++        print()
+ 
+     if sock_inodes:
+         ps_show_sockets(pid, ps, sock_inodes, sock_inode_re,
+@@ -384,12 +396,12 @@ def ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info, sock_inodes,
+         for tid in list(ps[pid]["threads"].keys()):
+             ps_show_thread(tid, False, ps[pid]["threads"],
+                            has_ctxt_switch_info,
+-                           sock_inodes, sock_inode_re, cgroups)
++                           sock_inodes, sock_inode_re, cgroups, columns, compact)
+ 
+ 
+ def ps_show(ps, affect_children, thread_list, cpu_list,
+             irq_list_numbers, show_uthreads, show_kthreads,
+-            has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups):
++            has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups, compact):
+ 
+     ps_list = []
+     for pid in list(ps.keys()):
+@@ -426,9 +438,15 @@ def ps_show(ps, affect_children, thread_list, cpu_list,
+ 
+     ps_list.sort()
+ 
++
++    # Width of terminal in columns
++    columns = None
++    if cgroups:
++        _, columns = os.popen('stty size', 'r').read().split()
++
+     for pid in ps_list:
+         ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info,
+-                       sock_inodes, sock_inode_re, cgroups)
++                       sock_inodes, sock_inode_re, cgroups, columns, compact)
+ 
+ 
+ def load_socktype(socktype, inodes):
+@@ -449,7 +467,7 @@ def load_sockets():
+ 
+ 
+ def do_ps(thread_list, cpu_list, irq_list, show_uthreads, show_kthreads,
+-          affect_children, show_sockets, cgroups):
++          affect_children, show_sockets, cgroups, compact):
+     ps = procfs.pidstats()
+     if affect_children:
+         ps.reload_threads()
+@@ -466,7 +484,7 @@ def do_ps(thread_list, cpu_list, irq_list, show_uthreads, show_kthreads,
+             ps_show_header(has_ctxt_switch_info, cgroups)
+         ps_show(ps, affect_children, thread_list,
+                 cpu_list, irq_list, show_uthreads, show_kthreads,
+-                has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups)
++                has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups, compact)
+     except IOError:
+         # 'tuna -P | head' for instance
+         pass
+@@ -698,7 +716,7 @@ def main():
+ 
+     elif args.command in ['show_threads']:
+         do_ps(args.thread_list, args.cpu_list, args.irq_list, args.uthreads,
+-                args.kthreads, args.affect_children, args.show_sockets if "show_sockets" in args else None, args.cgroups)
++                args.kthreads, args.affect_children, args.show_sockets if "show_sockets" in args else None, args.cgroups, args.compact)
+ 
+     elif args.command in ['show_irqs']:
+         show_irqs(args.irq_list, args.cpu_list)
+-- 
+2.31.1
+

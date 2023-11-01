@@ -1,0 +1,24 @@
+From b82d9037fe7f51e49a9b3c84b1ccb71fda1e1f61 Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Tue, 25 Oct 2022 16:19:25 -0400
+Subject: [PATCH 6/6] tuna: Remove threads print statement
+
+Remove unnecessary print statement from threadstring_to_list function
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 80e27523acc6..c5bc65059da7 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -533,7 +533,6 @@ def threadstring_to_list(threadstr):
+     global ps
+     thread_list = []
+     thread_strings = list(set(threadstr.split(',')))
+-    print(thread_strings)
+     for s in thread_strings:
+         if s.isdigit():
+             thread_list.append(int(s))
+-- 
+2.31.1
+

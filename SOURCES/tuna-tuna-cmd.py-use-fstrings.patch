@@ -1,0 +1,75 @@
+From 1e2f6a3b64bce4ea335e97b1ab31ada3e082a6bc Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Tue, 1 Nov 2022 13:24:00 -0400
+Subject: [PATCH 2/4] tuna: tuna-cmd.py use fstrings
+
+Add fstrings where possible to improve readabilty
+
+Due to the discussion regarding dropping the language feature, gettext
+shorthand _() have been removed.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index c5bc65059da7..44d9faaf15fb 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -89,7 +89,7 @@ irqs = None
+ 
+ class HelpMessageParser(argparse.ArgumentParser):
+     def error(self, message):
+-        sys.stderr.write('error: %s\n' % message)
++        sys.stderr.write(f'error: {message}\n')
+         self.print_help()
+         sys.exit(2)
+ 
+@@ -263,13 +263,16 @@ def thread_help(tid):
+         ps = procfs.pidstats()
+ 
+     if tid not in ps:
+-        print("tuna: " + _("thread %d doesn't exists!") % tid)
++        print(f"tuna: thread {tid} doesn't exist!")
+         return
+ 
+     pinfo = ps[tid]
+     cmdline = procfs.process_cmdline(pinfo)
+     help, title = tuna.kthread_help_plain_text(tid, cmdline)
+-    print("%s\n\n%s" % (title, _(help)))
++    print(title, "\n\n")
++    if help.isspace():
++        help = "No help description available."
++    print(help)
+ 
+ 
+ def save(cpu_list, thread_list, filename):
+@@ -295,7 +298,7 @@ def ps_show_header(has_ctxt_switch_info, cgroups=False):
+ 
+ def ps_show_sockets(pid, ps, inodes, inode_re, indent=0):
+     header_printed = False
+-    dirname = "/proc/%s/fd" % pid
++    dirname = f"/proc/{pid}/fd"
+     try:
+         filenames = os.listdir(dirname)
+     except:  # Process died
+@@ -688,7 +691,7 @@ def main():
+         try:
+             tuna.threads_set_priority(args.thread_list, args.priority, args.affect_children)
+         except OSError as err:
+-            print("tuna: %s" % err)
++            print(f"tuna: {err}")
+             sys.exit(2)
+ 
+     elif args.command in ['show_configs']:
+@@ -705,7 +708,7 @@ def main():
+         spread = args.command in ['spread', 'x']
+ 
+         if not (args.thread_list or args.irq_list):
+-            parser.error("tuna: %s " % (args.command) + _("requires a thread/irq list!\n"))
++            parser.error(f"tuna: {args.command} requires a thread/irq list!\n")
+ 
+         if args.thread_list:
+             tuna.move_threads_to_cpu(args.cpu_list, args.thread_list, spread=spread)
+-- 
+2.31.1
+

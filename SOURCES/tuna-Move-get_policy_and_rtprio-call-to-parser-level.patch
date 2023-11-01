@@ -1,0 +1,48 @@
+From 9dd8c3e889fe632405561cc8476ed42659a99e2e Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Thu, 4 Aug 2022 09:39:11 -0400
+Subject: [PATCH 2/6] tuna: Move get_policy_and_rtprio call to parser level
+
+Due to the implementation of the parser for the priority action,
+the valid policy and rtprio input can be checked at the parser level.
+
+Call get_policy_and_rtprio on `priority` and `run --priority` commands
+at argparse level.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index f49cce4d84d4..554912057f03 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -102,7 +102,7 @@ def gen_parser():
+             "filename": dict(metavar='FILENAME', type=str, help="Save kthreads sched tunables to this file"),
+             "profilename": dict(type=str, help="Apply changes described in this file"),
+             "run_command": dict(metavar='COMMAND', type=str, help="fork a new process and run the \"COMMAND\""),
+-            "priority": dict(type=str, help="policy/priority help"),
++            "priority": dict(type=tuna.get_policy_and_rtprio, help="policy/priority help"),
+           }
+ 
+     MODS = {
+diff --git a/tuna/tuna.py b/tuna/tuna.py
+index 8650f11c81c3..30a5a570c9d4 100755
+--- a/tuna/tuna.py
++++ b/tuna/tuna.py
+@@ -558,11 +558,8 @@ def thread_set_priority(tid, policy, rtprio):
+     os.sched_setscheduler(tid, policy, param)
+ 
+ def threads_set_priority(tids, parm, affect_children=False):
+-    try:
+-        (policy, rtprio) = get_policy_and_rtprio(parm)
+-    except ValueError:
+-        print("tuna: " + _("\"%s\" is an unsupported priority value!") % parm[0])
+-        return
++
++    (policy, rtprio) = parm
+ 
+     for tid in tids:
+         try:
+-- 
+2.31.1
+

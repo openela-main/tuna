@@ -1,0 +1,49 @@
+From 3f1fbb092f5ef07d04fef7ddec9e538f36d84450 Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Fri, 2 Sep 2022 11:55:07 -0400
+Subject: [PATCH 5/6] tuna: Fix matching irqs in ps_show_thread
+
+To new format to match irqs is "irqs/"
+We already test this when we call is_irq_thread(cmd):
+
+With this fix if you do
+
+tuna show_threads
+
+You will get nic information that was previously missed such as
+
+  986     FIFO    50        9     69286            2 irq/164-iwlwifi:default_que
+ue iwlwifi:default_queue
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index b13b25b8a801..80e27523acc6 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -351,17 +351,12 @@ def ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info, sock_inodes,
+         try:
+             if not irqs:
+                 irqs = procfs.interrupts()
+-            if cmd[:4] == "IRQ-":
+-                users = irqs[tuna.irq_thread_number(cmd)]["users"]
+-                for u in users:
+-                    if u in get_nics():
+-                        users[users.index(u)] = "%s(%s)" % (
+-                            u, ethtool.get_module(u))
+-                users = ",".join(users)
+-            else:
+-                u = cmd[cmd.find('-') + 1:]
++            users = irqs[tuna.irq_thread_number(cmd)]["users"]
++            for u in users:
+                 if u in get_nics():
+-                    users = ethtool.get_module(u)
++                    users[users.index(u)] = "%s(%s)" % (
++                        u, ethtool.get_module(u))
++            users = ",".join(users)
+         except:
+             users = "Not found in /proc/interrupts!"
+ 
+-- 
+2.31.1
+
