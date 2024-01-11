@@ -1,0 +1,94 @@
+From efcc75a317b63227a8630ca17e9bcf153a6cc03e Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Mon, 31 Oct 2022 13:11:31 -0400
+Subject: [PATCH 3/4] tuna: tuna.py use fstrings
+
+Add fstrings where possible to improve readabilty
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna/tuna.py b/tuna/tuna.py
+index 43adb84079e4..e527facb151c 100755
+--- a/tuna/tuna.py
++++ b/tuna/tuna.py
+@@ -58,7 +58,7 @@ def iskthread(pid):
+     # in this function, so that they know that the thread vanished and
+     # can act accordingly, removing entries from tree views, etc
+     try:
+-        f = open("/proc/%d/smaps" % pid)
++        f = open(f"/proc/{pid}/smaps")
+     except IOError:
+         # Thread has vanished
+         return True
+@@ -88,7 +88,7 @@ def is_irq_thread(cmd):
+     return cmd[:4] in ("IRQ-", "irq/")
+ 
+ def threaded_irq_re(irq):
+-    return re.compile("(irq/%s-.+|IRQ-%s)" % (irq, irq))
++    return re.compile(f"(irq/{irq}-.+|IRQ-{irq})")
+ 
+ # FIXME: Move to python-linux-procfs
+ def has_threaded_irqs(ps):
+@@ -96,10 +96,10 @@ def has_threaded_irqs(ps):
+     return len(ps.find_by_regex(irq_re)) > 0
+ 
+ def set_irq_affinity_filename(filename, bitmasklist):
+-    pathname = "/proc/irq/%s" % filename
++    pathname = f"/proc/irq/{filename}"
+     f = open(pathname, "w")
+     text = ",".join(["%x" % a for a in bitmasklist])
+-    f.write("%s\n" % text)
++    f.write(f"{text}\n")
+     try:
+         f.close()
+     except IOError:
+@@ -225,7 +225,7 @@ def move_threads_to_cpu(cpus, pid_list, set_affinity_warning=None, spread=False)
+             if pid not in ps:
+                 continue
+ 
+-            threads = procfs.pidstats("/proc/%d/task" % pid)
++            threads = procfs.pidstats(f"/proc/{pid}/task")
+             for tid in list(threads.keys()):
+                 try:
+                     curr_affinity = os.sched_getaffinity(tid)
+@@ -320,11 +320,11 @@ def affinity_remove_cpus(affinity, cpus, nr_cpus):
+ # Should be moved to python_linux_procfs.interrupts, shared with interrupts.parse_affinity, etc.
+ def parse_irq_affinity_filename(filename, nr_cpus):
+     try:
+-        f = open("/proc/irq/%s" % filename)
++        f = open(f"/proc/irq/{filename}")
+     except IOError as err:
+         if procfs.is_s390():
+             print("This operation is not supported on s390", file=sys.stderr)
+-            print("tuna: %s" % err, file=sys.stderr)
++            print(f"tuna: {err}", file=sys.stderr)
+             sys.exit(2)
+ 
+     line = f.readline()
+@@ -624,19 +624,19 @@ def run_command(cmd, policy, rtprio, cpu_list, background):
+             try:
+                 thread_set_priority(pid, policy, rtprio)
+             except (SystemError, OSError) as err:
+-                print("tuna: %s" % err)
++                print(f"tuna: {err}")
+                 sys.exit(2)
+         if cpu_list:
+             try:
+                 os.sched_setaffinity(pid, cpu_list)
+             except (SystemError, OSError) as err:
+-                print("tuna: %s" % err)
++                print(f"tuna: {err}")
+                 sys.exit(2)
+ 
+         try:
+             os.execvp(cmd_list[0], cmd_list)
+         except (SystemError, OSError) as err:
+-            print("tuna: %s" % err)
++            print(f"tuna: {err}")
+             sys.exit(2)
+     else:
+         if not background:
+-- 
+2.31.1
+

@@ -1,0 +1,372 @@
+From 0681906e75e1c8166126bbfc2f3055e7507bfcb5 Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Mon, 31 Oct 2022 13:04:28 -0400
+Subject: [PATCH 2/2] tuna: Update manpages for argparse CLI changes
+
+Due to the introduction of a new commandline interface,
+update the tuna manpages.
+
+Update with new command line options.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+- Slightly edited the description
+- Changed "seperated" to "separated"
+- Changed the "explains"  to "describes" (not part of Leah's patch)
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/docs/tuna.8 b/docs/tuna.8
+index 3a065562b00e..f50a8c2a0a16 100644
+--- a/docs/tuna.8
++++ b/docs/tuna.8
+@@ -9,100 +9,261 @@ This manual page explains the \fBtuna\fR program. The program can be used to cha
+ .PP 
+ \fBtuna\fP can change scheduling policy, scheduler priority and processor affinity for processes and process threads. \fBtuna\fR can also change the processor affinity for interrupts.
+ When \fBtuna\fR is invoked without any options it starts up in its graphical interface mode. This manual page explains only the command\-line options for \fBtuna\fR
+-.SH "OPTIONS"
+-\fBtuna\fR has both \fIaction\fR options and \fImodifier\fR options. Modifier options must be specified on the command\-line before the actions they are intended to modify. Any modifier option applies to following actions on the same command-line until it is over-ridden.
+-.IP \fIActions\fR
++.SH "GLOBAL OPTIONS"
+ .TP
+ \fB\-h\fR, \fB\-\-help\fR
+ Print a list of options. \fBtuna\fR will exit after this action, ignoring the remainder of the command-line.
+ .TP
+-\fB\-g\fR, \fB\-\-gui\fR
+-Start the GUI. Actions that follow this on the command-line will be processed without waiting for the GUI to complete.
++\fB\-v\fR, \fB\-\-version\fR
++Show version
+ .TP
+-\fB\-a\fR, \fB\-\-config_file_apply=profilename\fR
+-Apply changes described in profile
++\fB\-L\fR, \fB\-\-logging\fR=\fILOG-LEVEL\fR
++Log application details to file for given LOG-LEVEL
+ .TP
+-\fB\-l\fR, \fB\-\-config_file_list\fR
+-List preloaded profiles
++\fB\-D\fR, \fB\-\-debug\fR
++Print DEBUG level logging details to console
++.SH "COMMANDS"
+ .TP
+-\fB\-i\fR, \fB\-\-isolate\fR
+-Move all allowed threads and IRQs away from CPU\-LIST. Requires \fB\-c\fR or \fB-S\fR.
++\fBtuna isolate\fR
++usage: tuna-cmd.py isolate [-h] (-c CPU-LIST | -S CPU-SOCKET-LIST | -N)
++
++Move all allowed threads and IRQs away from CPU\-LIST. Requires \fB\-c\fR, \fB-S\fR, or \fB-N\fR.
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
+ .TP
+-\fB\-I\fR, \fB\-\-include\fR
+-Allow all allowed threads and IRQs to run on CPU\-LIST. Requires \fB\-c\fR or \fB-S\fR.
++\fBtuna include\fR
++usage: tuna-cmd.py include [-h] (-c CPU-LIST | -S CPU-SOCKET-LIST | -N)
++
++Allow all allowed threads and IRQs to run on CPU\-LIST. Requires \fB\-c\fR, \fB-S\fR, or \fB-N\fR.
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
+ .TP
+-\fB\-m\fR, \fB\-\-move\fR
+-Move selected entities to CPU\-LIST. Requires \fB\-c\fR and either \fB-t\fR or \fB-q\fR.
++\fBtuna move\fR
++usage: tuna-cmd.py move [-h] (-c CPU-LIST | -S CPU-SOCKET-LIST | -N)
++                        [-t THREAD-LIST] [-q IRQ-LIST]
++
++Move selected entities to CPU\-LIST. Requires \fB\-c\fR, \fB-S\fR, or \fB-N\fR and \fB-t\fR or \fB-q\fR.
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
++  -t THREAD-LIST, --threads THREAD-LIST
++                        THREAD-LIST affected by commands
++  -q IRQ-LIST, --irqs IRQ-LIST
++                        IRQ-LIST affect by commands
+ .TP
+-\fB\-p\fR, \fB\-\-priority\fR=\fI[POLICY:]\fRRTPRIO
+-Set thread scheduler tunables: POLICY and RTPRIO. POLICY is one of OTHER, FIFO, RR, or BATCH. If \fB\-t\fR is not set, \fB\-p\fR will act as a Modifier saving the sched tunables for future Actions, for example \fB\-r\fR.
++\fBtuna spread\fR
++usage: tuna-cmd.py spread [-h] (-c CPU-LIST | -S CPU-SOCKET-LIST | -N)
++                          [-t THREAD-LIST] [-q IRQ-LIST]
++
++Spread selected entities over CPU-LIST. The specified threads and IRQs are each assigned to one cpu in CPU-LIST. Requires \fB\-c\fR, \fB-S\fR, or \fB-N\fR and \fB-t\fR or \fB-q\fR.
++
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
++  -t THREAD-LIST, --threads THREAD-LIST
++                        THREAD-LIST affected by commands
++  -q IRQ-LIST, --irqs IRQ-LIST
++                        IRQ-LIST affect by commands
+ .TP
+-\fB\-P\fR, \fB\-\-show_threads\fR
+-Show thread list.
++
++\fBtuna priority\fR
++usage: tuna-cmd.py priority [-h] -t THREAD-LIST [-C] POLICY:RTPRIO
++
++Set thread scheduler tunables: POLICY and RTPRIO. POLICY is one of OTHER, FIFO, RR, or BATCH. Provide POLICY, RTPRIO, or POLICY:RTPRIO separated by ":". If only POLICY is set, the RT priority will default to 1 if the policy is RT, and 0 otherwise. If only RTPRIO is specified, policy will not be changed.
++
++positional arguments:
++  POLICY:RTPRIO         Set thread scheduler tunables: POLICY and RTPRIO
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -t THREAD-LIST, --threads THREAD-LIST
++                        THREAD-LIST affected by commands
++  -C, --affect_children
++                        Operation will affect children threads
+ .TP
+-\fB\-Q\fR, \fB\-\-show_irqs\fR
+-Show IRQ list.
++\fBtuna run\fR
++usage: tuna-cmd.py run [-h] [-c CPU-LIST | -S CPU-SOCKET-LIST | -N]
++                       [-p PRIORITY] [-b]
++                       COMMAND
++
++Run the COMMAND. The entire command line must be provided inside "quotes". Modifiers \fB-c\fR, \fB-S\fR and \fB-p\fR can be used to set the affinity and scheduler tunables of the given COMMAND.
++
++positional arguments:
++  COMMAND               fork a new process and run the "COMMAND"
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
++  -p PRIORITY, --priority PRIORITY
++                        Set thread scheduler tunables: POLICY and RTPRIO
++  -b, --background      Run command as background task
++
+ .TP
+-\fB\-r\fR, \fB\-\-run\fR=\fI"COMMAND"\fR
+-Run the COMMAND. If arguments are passed, the entire command line must be provided inside "quotes". Modifiers \fB-c\fR and \fB-p\fR can be used to set the affinity and scheduler tunables of the given COMMAND. The arg[0] (i.e. the command) will be set in THREAD\-LIST. Likewise the \fB-t\fR, the COMMAND accepts the prefix \fB+\fR and \fB-\fR as wildcards in order to be appended or removed from THREAD\-LIST, respectively.
++\fBtuna save\fR
++usage: tuna-cmd.py save [-h] [-c CPU-LIST | -S CPU-SOCKET-LIST | -N]
++                        [-t THREAD-LIST]
++                        FILENAME
++
++Save kthreads sched tunables to FILENAME
++
++positional arguments:
++  FILENAME              Save kthreads sched tunables to this file
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
++  -t THREAD-LIST, --threads THREAD-LIST
++                        THREAD-LIST affected by commands
+ .TP
+-\fB\-R\fR, \fB\-\-refresh\fR=\fIMSEC\fR
+-Refresh the GUI every MSEC milliseconds
++\fBtuna apply\fR
++usage: tuna-cmd.py apply [-h] profilename
++
++Apply changes described in profile
++
++positional arguments:
++  profilename  Apply changes described in this file
++
++optional arguments:
++  -h, --help   show this help message and exit
++
+ .TP
+-\fB\-s\fR, \fB\-\-save\fR=\fIFILENAME\fR
+-Save kthreads sched tunables to FILENAME.
++\fBtuna show_threads\fR
++usage: tuna-cmd.py show_threads [-h] [-c CPU-LIST | -N | -S CPU-SOCKET-LIST]
++                                [-t THREAD-LIST | -q IRQ-LIST] [-U] [-K] [-C]
++                                [-G]
++
++Show thread list
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -t THREAD-LIST, --threads THREAD-LIST
++                        THREAD-LIST affected by commands
++  -q IRQ-LIST, --irqs IRQ-LIST
++                        IRQ-LIST affect by commands
++  -U, --no_uthreads     Operations will not affect user threads
++  -K, --no_kthreads     Operations will not affect kernel threads
++  -C, --affect_children
++                        Operation will affect children threads
++  -G, --cgroups         Display the processes with the type of cgroups they
++                        are in
++
+ .TP
+-\fB\-v\fR, \fB\-\-version\fR
+-Show version
++\fBtuna show_irqs\fR
++usage: tuna-cmd.py show_irqs [-h] [-c CPU-LIST | -N | -S CPU-SOCKET-LIST]
++                             [-q IRQ-LIST]
++
++Show IRQ list
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -q IRQ-LIST, --irqs IRQ-LIST
++                        IRQ-LIST affect by commands
++
+ .TP
+-\fB\-W\fR, \fB\-\-what_is\fR
+-Provides help about selected entities. Requires \fB-t\fR.
++\fBtuna show_configs\fR
++usage: tuna-cmd.py show_configs [-h]
++
++List preloaded profiles
++
++optional arguments:
++  -h, --help  show this help message and exit
++
+ .TP
+-\fB\-x\fR, \fB\-\-spread\fR
+-Spread selected entities over CPU\-LIST. Requires at least one of \fB-t\fR or \fB-q\fR. The specified threads and IRQs are each assigned to one cpu in CPU\-LIST.
++\fB tuna what_is\fR
++usage: tuna-cmd.py what_is [-h] THREAD-LIST
++
++Provides help about selected entities
++
++positional arguments:
++  THREAD-LIST  THREAD-LIST affected by commands
++
++optional arguments:
++  -h, --help   show this help message and exit
++.TP
++\fB tuna gui\fR
++usage: tuna-cmd.py gui [-h] [-d] [-R MSEC]
++                       [-c CPU-LIST | -N | -S CPU-SOCKET-LIST] [-U] [-K]
++
++Start the GUI
++
++optional arguments:
++  -h, --help            show this help message and exit
++  -d, --disable_perf    Explicitly disable usage of perf in GUI for process
++                        view
++  -R MSEC, --refresh MSEC
++                        Refresh the GUI every MSEC milliseconds
++  -c CPU-LIST, --cpus CPU-LIST
++                        CPU-LIST affected by commands
++  -N, --nohz_full       CPUs in nohz_full kernel command line will be affected
++                        by operations
++  -S CPU-SOCKET-LIST, --sockets CPU-SOCKET-LIST
++                        CPU-SOCKET-LIST affected by commands
++  -U, --no_uthreads     Operations will not affect user threads
++  -K, --no_kthreads     Operations will not affect kernel threads
+ .IP \fIModifiers\fR
+ .TP
+ \fB\-c\fR, \fB\-\-cpus\fR=\fICPU\-LIST\fR
+-CPU\-LIST affected by commands. Requires a CPU number or a comma-separated list of CPU numbers.
+-.TP
+-\fB\-C\fR, \fB\-\-affect_children\fR
+-Operation will affect children threads.
+-.TP
+-\fB\-d\fR, \fB\-\-disable_perf\fR
+-Explicitly disable usage of perf in GUI for process view
+-.TP
+-\fB\-D\fR, \fB\-\-debug\fR
+-Print DEBUG level logging details to console.
+-.TP
+-\fB\-f\fR, \fB\-\-filter\fR
+-Disable display of selected CPUs in \fB--gui\fR. Requires \fB-c\R.
+-.TP
+-\fB\-G\fR, \fB\-\-cgroup\fR
+-Display the processes with the type of cgroups they are in. Requires \fB-P\R.
+-.TP
+-\fB\-K\fR, \fB\-\-no_kthreads\fR
+-Operations will not affect kernel threads.
+-.TP
+-\fB\-L\fR, \fB\-\-logging\fR=\fILOG\-LEVEL\fR
+-Log application details to log file for given LOG-LEVEL
+-.TP
+-\fB\-N\fR, \fB\-\-nohz_full\fR
+-CPUs in nohz_full= kernel command line parameter will be affected by operations
+-.TP
+-\fB\-q\fR, \fB\-\-irqs\fR=\fIIRQ\-LIST\fR
+-IRQ\-LIST affected by commands. Requires an IRQ number or a comma-separated list of IRQ numbers.
++CPU\-LIST affected by commands. Requires a CPU number, a range, or a comma-separated list of CPU numbers.
+ .TP
+ \fB\-S\fR, \fB\-\-sockets\fR=\fICPU\-SOCKET\-LIST\fR
+ CPU\-SOCKET\-LIST affected by commands. Requires a socket number or a comma-separated list of socket numbers.
+ .TP
+ \fB\-t\fR, \fB\-\-threads\fR=\fITHREAD\-LIST\fR
+-THREAD\-LIST affected by commands. Requires a thread number or thread name, or a comma-separated list of thread numbers and/or names. Thread names may contain wildcards. Be sure to quote or escape any wildcard specifications. If only \fB-\fR is passed as argument, the THREAD\-LIST will be cleared.
++THREAD\-LIST affected by commands. Requires a thread number or thread name, or a comma-separated list of thread numbers and/or names. Thread names may contain wildcards. Be sure to quote or escape any wildcard specifications.
+ .TP
+-\fB\-U\fR, \fB\-\-no_uthreads\fR
+-Operations will not affect user threads.
+ .SH USAGE EXAMPLES
+ If for instance the Ethernet NICs have multiple queues for both receive and transmit, each with its own IRQ, the Ethernet IRQs can be associated with a CPU socket:
+ .TP
+-.B tuna -S 2 -i -q 'eth*' -x
++.B tuna isolate -S 2
++.TP
++.B tuna spread -q 'eth*' -S 2
+ 
+ Move everything off the CPUs in socket 2, then spread the IRQs for the Ethernet devices across those same CPUs.
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 4ac01f4f4522..8be35f7fb4c4 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -101,7 +101,7 @@ def gen_parser():
+             "filename": dict(metavar='FILENAME', type=str, help="Save kthreads sched tunables to this file"),
+             "profilename": dict(type=str, help="Apply changes described in this file"),
+             "run_command": dict(metavar='COMMAND', type=str, help="fork a new process and run the \"COMMAND\""),
+-            "priority": dict(type=tuna.get_policy_and_rtprio, help="policy/priority help"),
++            "priority": dict(type=tuna.get_policy_and_rtprio, metavar="POLICY:RTPRIO", help="Set thread scheduler tunables: POLICY and RTPRIO"),
+           }
+ 
+     MODS = {
+@@ -120,7 +120,7 @@ def gen_parser():
+             "no_kthreads": dict(action='store_false', dest='kthreads', help="Operations will not affect kernel threads"),
+             "disable_perf": dict(action='store_true', help="Explicitly disable usage of perf in GUI for process view"),
+             "refresh": dict(default=2500, metavar='MSEC', type=int, help="Refresh the GUI every MSEC milliseconds"),
+-            "priority": dict(default=(None, None), type=tuna.get_policy_and_rtprio, help="Set thread scheduler tunables: POLICY and RTPRIO"),
++            "priority": dict(default=(None, None), metavar="POLICY:RTPRIO", type=tuna.get_policy_and_rtprio, help="Set thread scheduler tunables: POLICY and RTPRIO"),
+             "background": dict(action='store_true', help="Run command as background task")
+          }
+ 
+-- 
+2.31.1
+

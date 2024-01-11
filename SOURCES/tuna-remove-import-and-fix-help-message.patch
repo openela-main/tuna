@@ -1,0 +1,33 @@
+From bef2c2009ed5151cf7ae4bf258a908c9f577ca7d Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Wed, 2 Nov 2022 11:16:48 -0400
+Subject: [PATCH 1/2] tuna: remove import and fix help message
+
+Remove getopt import and fix help message for 'spread' command.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 44d9faaf15fb..4ac01f4f4522 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -21,7 +21,6 @@ import os
+ import sys
+ import errno
+ import re
+-import getopt
+ import fnmatch
+ import gettext
+ import locale
+@@ -140,7 +139,7 @@ def gen_parser():
+                                      help="Allow all threads to run on CPU-LIST")
+     move = subparser.add_parser('move', description="Move selected entities to CPU-LIST",
+                                     help="Move selected entities to CPU-LIST")
+-    spread = subparser.add_parser('spread', description="Move selected entities to CPU-LIST",
++    spread = subparser.add_parser('spread', description="Spread selected entities to CPU-LIST",
+                                     help="Spread selected entities over CPU-LIST")
+     priority = subparser.add_parser('priority', description="Set thread scheduler tunables: POLICY and RTPRIO",
+                                     help="Set thread scheduler tunables: POLICY and RTPRIO")
+-- 
+2.31.1
+

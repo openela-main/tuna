@@ -1,0 +1,97 @@
+From f2a28b05264fa9557192b73a1b888756748930ac Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Tue, 27 Sep 2022 12:59:54 -0400
+Subject: [PATCH 4/6] tuna: Replace python_ethtool with builtin funtionality
+
+This patch replaces the dependency on python_ethtool with some
+simplified functions to achieve the same result.
+
+Reviewed-by: Federico Pellegrin <fede@evolware.org>
+- return 'tun' only if tun_flags exists
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 9a3d3f32398b..b13b25b8a801 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -26,7 +26,7 @@ import fnmatch
+ import gettext
+ import locale
+ from functools import reduce
+-import ethtool
++import tuna.new_eth as ethtool
+ import tuna.tuna_sched as tuna_sched
+ import procfs
+ from tuna import tuna, sysfs
+diff --git a/tuna/gui/irqview.py b/tuna/gui/irqview.py
+index 35fc3fd0b0ca..5143d6dc0df5 100755
+--- a/tuna/gui/irqview.py
++++ b/tuna/gui/irqview.py
+@@ -7,7 +7,7 @@ from gi.repository import Gtk
+ from gi.repository import GObject
+ import os
+ from functools import reduce
+-import ethtool
++import tuna.new_eth as ethtool
+ import tuna.tuna_sched as tuna_sched
+ 
+ import gi
+diff --git a/tuna/new_eth.py b/tuna/new_eth.py
+new file mode 100755
+index 000000000000..98f9179d5695
+--- /dev/null
++++ b/tuna/new_eth.py
+@@ -0,0 +1,37 @@
++# Copyright (C) 2022 John Kacur
++""" A few functions similar to ethtool """
++import os
++import socket
++
++def get_active_devices():
++    """ return a list of network devices """
++    ret = []
++
++    for device in socket.if_nameindex():
++        ret.append(device[1])
++
++    return ret
++
++def get_module(intf):
++    """ return the kernel module for the given network interface """
++    if intf == 'lo':
++        return ""
++    myp = f'/sys/class/net/{intf}/device/driver'
++    if os.path.exists(myp):
++        return os.path.basename(os.readlink(myp))
++    if os.path.exists(f'/sys/class/net/{intf}/bridge'):
++        return 'bridge'
++    if os.path.exists(f'/sys/class/net/{intf}/tun_flags'):
++        return 'tun'
++    return ""
++
++if __name__ == "__main__":
++    nics = get_active_devices()
++    print(f'nics = {nics}')
++
++    for intf in nics:
++        driver = get_module(intf)
++        if driver:
++            print(f'{intf}, {driver}')
++        else:
++            print(f'{intf}')
+diff --git a/tuna/tuna.py b/tuna/tuna.py
+index 30a5a570c9d4..43adb84079e4 100755
+--- a/tuna/tuna.py
++++ b/tuna/tuna.py
+@@ -9,7 +9,7 @@ import sys
+ import shlex
+ import fnmatch
+ import platform
+-import ethtool
++import tuna.new_eth as ethtool
+ import procfs
+ from procfs import utilist
+ from tuna import help
+-- 
+2.31.1
+

@@ -1,0 +1,137 @@
+From 87f6d9e29bab615b03b26210e3ead493fd08fe1f Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Thu, 8 Sep 2022 14:49:35 -0400
+Subject: [PATCH 3/6] tuna: Add --sockets command line option
+
+The getopt version of tuna implements the --sockets argument which is used
+to specify a cpulist from the cpu sockets on a system. The --sockets
+and --cpus arguments in the getopt version override each other, such
+that 'tuna -S 0 -c 1,2' will cause a cpu_list of [1, 2].
+
+In the argparse cli, add support for a --sockets argument used to specify a
+cpulist and is mutually exclusive with the --cpus and --nohz_full arguments.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 554912057f03..9a3d3f32398b 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -112,7 +112,7 @@ def gen_parser():
+             "threads": dict(dest='thread_list', default=[], metavar='THREAD-LIST', type=threadstring_to_list, help="THREAD-LIST affected by commands"),
+             "irqs": dict(dest='irq_list', default=[], metavar='IRQ-LIST', type=irqstring_to_list, help="IRQ-LIST affect by commands"),
+             "cpus": dict(dest='cpu_list', default=[], metavar='CPU-LIST', type=tuna.cpustring_to_list, help='CPU-LIST affected by commands'),
+-            "sockets": dict(default=[], nargs='+', type=int, help="CPU-SOCKET-LIST affected by commands"),
++            "sockets": dict(dest='cpu_list', default=[], metavar='CPU-SOCKET-LIST', type=socketstring_to_list, help="CPU-SOCKET-LIST affected by commands"),
+             "show_sockets": dict(action='store_true', help='Show network sockets in use by threads'),
+             "cgroups": dict(action='store_true', dest='cgroups', help='Display the processes with the type of cgroups they are in'),
+             "affect_children": dict(action='store_true', help="Operation will affect children threads"),
+@@ -159,20 +159,24 @@ def gen_parser():
+ 
+     isolate_group = isolate.add_mutually_exclusive_group(required=True)
+     isolate_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    isolate_group.add_argument('-S', '--sockets', **MODS['sockets'])
+     isolate_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
+ 
+     include_group = include.add_mutually_exclusive_group(required=True)
+     include_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    include_group.add_argument('-S', '--sockets', **MODS['sockets'])
+     include_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
+ 
+     move_group = move.add_mutually_exclusive_group(required=True)
+     move_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    move_group.add_argument('-S', '--sockets', **MODS['sockets'])
+     move_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
+     move.add_argument('-t', '--threads', **MODS['threads'])
+     move.add_argument('-q', '--irqs', **MODS['irqs'])
+ 
+     spread_group = spread.add_mutually_exclusive_group(required=True)
+     spread_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    spread_group.add_argument('-S', '--sockets', **MODS['sockets'])
+     spread_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
+     spread.add_argument('-t', '--threads', **MODS['threads'])
+     spread.add_argument('-q', '--irqs', **MODS['irqs'])
+@@ -182,12 +186,18 @@ def gen_parser():
+     priority.add_argument('-C', '--affect_children', **MODS['affect_children'])
+ 
+     run.add_argument('run_command', **POS['run_command'])
+-    run.add_argument('-c', '--cpus', **MODS['cpus'])
++    run_group = run.add_mutually_exclusive_group(required=False)
++    run_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    run_group.add_argument('-S', '--sockets', **MODS['sockets'])
++    run_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
+     run.add_argument('-p', '--priority', **MODS['priority'])
+     run.add_argument('-b', '--background', **MODS['background'])
+ 
+     save.add_argument('filename', **POS['filename'])
+-    save.add_argument('-c', '--cpus', **MODS['cpus'])
++    save_group = save.add_mutually_exclusive_group(required=False)
++    save_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    save_group.add_argument('-S', '--sockets', **MODS['sockets'])
++    save_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
+     save.add_argument('-t', '--threads', **MODS['threads'])
+ 
+     apply.add_argument('profilename', **POS['profilename'])
+@@ -195,6 +205,7 @@ def gen_parser():
+     show_threads_group1 = show_threads.add_mutually_exclusive_group(required=False)
+     show_threads_group1.add_argument('-c', '--cpus', **MODS['cpus'])
+     show_threads_group1.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
++    show_threads_group1.add_argument('-S', '--sockets', **MODS['sockets'])
+     show_threads_group2 = show_threads.add_mutually_exclusive_group(required=False)
+     show_threads_group2.add_argument('-t', '--threads', **MODS['threads'])
+     show_threads_group2.add_argument('-q', '--irqs', **MODS['irqs'])
+@@ -206,14 +217,21 @@ def gen_parser():
+         show_threads.add_argument('-n', '--show_sockets', **MODS['show_sockets'])
+     show_threads.add_argument('-G', '--cgroups', **MODS['cgroups'])
+ 
+-    show_irqs.add_argument('-c', '--cpus', **MODS['cpus'])
++
++    show_irqs_group = show_irqs.add_mutually_exclusive_group(required=False)
++    show_irqs_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    show_irqs_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
++    show_irqs_group.add_argument('-S', '--sockets', **MODS['sockets'])
+     show_irqs.add_argument('-q', '--irqs', **MODS['irqs'])
+ 
+     what_is.add_argument('thread_list', **POS['thread_list'])
+ 
+     gui.add_argument('-d', '--disable_perf', **MODS['disable_perf'])
+     gui.add_argument('-R', '--refresh', **MODS['refresh'])
+-    gui.add_argument('-c', '--cpus', **MODS['cpus'])
++    gui_group = gui.add_mutually_exclusive_group(required=False)
++    gui_group.add_argument('-c', '--cpus', **MODS['cpus'])
++    gui_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
++    gui_group.add_argument('-S', '--sockets', **MODS['sockets'])
+     gui.add_argument('-U', '--no_uthreads', **MODS['no_uthreads'])
+     gui.add_argument('-K', '--no_kthreads', **MODS['no_kthreads'])
+ 
+@@ -536,7 +554,6 @@ def irqstring_to_list(irqstr):
+ 
+     irq_list = []
+     irq_strings = list(set(irqstr.split(',')))
+-    print(irq_strings)
+     for s in irq_strings:
+         if s.isdigit():
+             irq_list.append(int(s))
+@@ -546,6 +563,18 @@ def irqstring_to_list(irqstr):
+             irq_list += [int(i) for i in irq_list_str if i.isdigit()]
+     return irq_list
+ 
++def socketstring_to_list(socketstr):
++    cpu_list = []
++    socket_strings = list(set(socketstr.split(',')))
++    cpu_info = sysfs.cpus()
++
++    for s in socket_strings:
++        if s not in cpu_info.sockets:
++            print("tuna: invalid socket %(socket)s sockets available: %(available)s" %
++                    {"socket": s,"available": ",".join(list(cpu_info.sockets.keys()))})
++            sys.exit(2)
++        cpu_list += [int(cpu.name[3:]) for cpu in cpu_info.sockets[s]]
++    return cpu_list
+ 
+ def pick_op(argument):
+     if argument == "":
+-- 
+2.31.1
+
