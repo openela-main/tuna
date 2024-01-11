@@ -1,0 +1,66 @@
+From e9f60274865475c4e9081ee356ffbc61d1df2ade Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Wed, 2 Nov 2022 10:57:19 -0400
+Subject: [PATCH 3/3] tuna: tuna-cmd.py use fstrings
+
+Add fstrings where possible to improve readabilty
+
+Due to the discussion regarding dropping the language feature, gettext
+shorthand _() have been removed.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+Signed-off-by: John Kacur <jkacur@redhat.com>
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 79e33371837e..75b63da972c2 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -176,13 +176,16 @@ def thread_help(tid):
+         ps = procfs.pidstats()
+ 
+     if tid not in ps:
+-        print("tuna: " + _("thread %d doesn't exists!") % tid)
++        print(f"tuna: thread {tid} doesn't exist!")
+         return
+ 
+     pinfo = ps[tid]
+     cmdline = procfs.process_cmdline(pinfo)
+     help, title = tuna.kthread_help_plain_text(tid, cmdline)
+-    print("%s\n\n%s" % (title, _(help)))
++    print(title, "\n\n")
++    if help.isspace():
++        help = "No help description available."
++    print(help)
+ 
+ 
+ def save(cpu_list, thread_list, filename):
+@@ -208,7 +211,7 @@ def ps_show_header(has_ctxt_switch_info, cgroups=False):
+ 
+ def ps_show_sockets(pid, ps, inodes, inode_re, indent=0):
+     header_printed = False
+-    dirname = "/proc/%s/fd" % pid
++    dirname = f"/proc/{pid}/fd"
+     try:
+         filenames = os.listdir(dirname)
+     except:  # Process died
+@@ -650,7 +653,7 @@ def main():
+             try:
+                 gui_refresh=int(a)
+             except Exception as err:
+-                print("tuna: --refresh %s" % err)
++                print(f"tuna: --refresh {err}")
+                 sys.exit(2)
+         elif o in ("-d", "--disable_perf"):
+             run_gui = True
+@@ -679,7 +682,7 @@ def main():
+                 try:
+                     tuna.threads_set_priority(thread_list, a, affect_children)
+                 except OSError as err:
+-                    print("tuna: %s" % err)
++                    print(f"tuna: {err}")
+                     sys.exit(2)
+         elif o in ("-P", "--show_threads"):
+             # If the user specified process names that weren't
+-- 
+2.31.1
+

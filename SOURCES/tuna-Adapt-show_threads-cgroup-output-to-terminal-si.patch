@@ -1,0 +1,175 @@
+From 9dfaafe278f6cccf6911cddef413dc59e87722e7 Mon Sep 17 00:00:00 2001
+From: Leah Leshchinsky <lleshchi@redhat.com>
+Date: Wed, 16 Nov 2022 10:38:10 -0500
+Subject: [PATCH] tuna: Adapt show_threads cgroup output to terminal size
+
+Passing the --cgroup flag for the --show_threads command currently displays
+long cgroup strings on the thread output and decreases readability.
+
+Adapt the show_threads output to account for output string and terminal
+size, and format output accordingly to improve readability. Add
+--spaced flag to --show_threads to print cgroups spacing in
+between thread outputs.
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+
+---
+target branch: getopt
+
+Signed-off-by: Leah Leshchinsky <lleshchi@redhat.com>
+
+diff --git a/docs/tuna.8 b/docs/tuna.8
+index 3a06556..218ba14 100644
+--- a/docs/tuna.8
++++ b/docs/tuna.8
+@@ -80,6 +80,9 @@ Disable display of selected CPUs in \fB--gui\fR. Requires \fB-c\R.
+ \fB\-G\fR, \fB\-\-cgroup\fR
+ Display the processes with the type of cgroups they are in. Requires \fB-P\R.
+ .TP
++\fB\-z\fR, \fB\-\-spaced\fR
++Display spaced view for cgroups. Requires \fB-G\R.
++.TP
+ \fB\-K\fR, \fB\-\-no_kthreads\fR
+ Operations will not affect kernel threads.
+ .TP
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 75b63da..54dc567 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -99,6 +99,8 @@ def usage():
+     print(fmt % ('-g, --gui',                   _('Start the GUI')))
+     print(fmt % ('-G, --cgroup',
+                  _('Display the processes with the type of cgroups they are in')))
++    print(fmt % ('-z, --spaced',
++                "Display spaced view for cgroups"))
+     print(fmt % ('-c, --cpus=' + _('CPU-LIST'), _('%(cpulist)s affected by commands') %
+                  {"cpulist": _('CPU-LIST')}))
+     print(fmt % ('-C, --affect_children',
+@@ -249,7 +251,7 @@ def format_affinity(affinity):
+     return ",".join(str(hex(a)) for a in procfs.hexbitmask(affinity, get_nr_cpus()))
+ 
+ def ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info, sock_inodes,
+-                   sock_inode_re, cgroups):
++                   sock_inode_re, cgroups, columns=None, compact=True):
+     global irqs
+     try:
+         affinity = format_affinity(os.sched_getaffinity(pid))
+@@ -286,10 +288,20 @@ def ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info, sock_inodes,
+                                           nonvoluntary_ctxt_switches)
+ 
+     # Indent affected children
+-    print(" %-5d " % pid if affect_children else "  %-5d" % pid, end=' ')
+-    print("%6s %5d %8s%s %15s %s" % (sched, rtprio, affinity,
+-                                     ctxt_switch_info, cmd, users), end=' ')
+-    print(" %9s" % cgout if cgroups else "")
++    s1 = " %-5d " % pid if affect_children else "  %-5d" % pid
++    print(s1, end=' ')
++    s2 = "%6s %5d %8s%s %15s     %s" % (sched, rtprio, affinity,
++                                     ctxt_switch_info, cmd, users)
++    print(s2, end=' ')
++
++    if cgroups:
++        length = int(columns) - len(s1 + " ") - len(s2 + " ")
++        if len(" %9s" % cgout) <= length:
++            print("%s" % cgout)
++        else:
++            print("\n %s" % cgout + ("" if compact else "\n"))
++    else:
++        print()
+ 
+     if sock_inodes:
+         ps_show_sockets(pid, ps, sock_inodes, sock_inode_re,
+@@ -298,12 +310,12 @@ def ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info, sock_inodes,
+         for tid in list(ps[pid]["threads"].keys()):
+             ps_show_thread(tid, False, ps[pid]["threads"],
+                            has_ctxt_switch_info,
+-                           sock_inodes, sock_inode_re, cgroups)
++                           sock_inodes, sock_inode_re, cgroups, columns, compact)
+ 
+ 
+ def ps_show(ps, affect_children, thread_list, cpu_list,
+             irq_list_numbers, show_uthreads, show_kthreads,
+-            has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups):
++            has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups, compact):
+ 
+     ps_list = []
+     for pid in list(ps.keys()):
+@@ -340,9 +352,14 @@ def ps_show(ps, affect_children, thread_list, cpu_list,
+ 
+     ps_list.sort()
+ 
++    # Width of terminal in columns
++    columns = None
++    if cgroups:
++        _, columns = os.popen('stty size', 'r').read().split()
++
+     for pid in ps_list:
+         ps_show_thread(pid, affect_children, ps, has_ctxt_switch_info,
+-                       sock_inodes, sock_inode_re, cgroups)
++                       sock_inodes, sock_inode_re, cgroups, columns, compact)
+ 
+ 
+ def load_socktype(socktype, inodes):
+@@ -363,7 +380,7 @@ def load_sockets():
+ 
+ 
+ def do_ps(thread_list, cpu_list, irq_list, show_uthreads, show_kthreads,
+-          affect_children, show_sockets, cgroups):
++          affect_children, show_sockets, cgroups, compact):
+     ps = procfs.pidstats()
+     if affect_children:
+         ps.reload_threads()
+@@ -380,7 +397,7 @@ def do_ps(thread_list, cpu_list, irq_list, show_uthreads, show_kthreads,
+             ps_show_header(has_ctxt_switch_info, cgroups)
+         ps_show(ps, affect_children, thread_list,
+                 cpu_list, irq_list, show_uthreads, show_kthreads,
+-                has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups)
++                has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups, compact)
+     except IOError:
+         # 'tuna -P | head' for instance
+         pass
+@@ -535,13 +552,13 @@ def main():
+ 
+     i18n_init()
+     try:
+-        short = "a:c:dDCfgGhiIKlmNp:PQq:r:R:s:S:t:UvWxL:"
++        short = "a:c:dDCfgGzhiIKlmNp:PQq:r:R:s:S:t:UvWxL:"
+         long = ["cpus=", "affect_children", "filter", "gui", "help",
+                 "isolate", "include", "no_kthreads", "move", "nohz_full",
+                 "show_sockets", "priority=", "show_threads",
+                 "show_irqs", "irqs=",
+                 "save=", "sockets=", "threads=", "no_uthreads",
+-                "version", "what_is", "spread", "cgroup", "config_file_apply=",
++                "version", "what_is", "spread", "cgroup", "spaced", "config_file_apply=",
+                 "config_file_list", "run=", "refresh=", "disable_perf", "logging=", "debug"]
+         if have_inet_diag:
+             short += "n"
+@@ -556,6 +573,7 @@ def main():
+     kthreads = True
+     uthreads = True
+     cgroups = False
++    compact = True
+     cpu_list = None
+     debug = False
+     irq_list = None
+@@ -623,6 +641,8 @@ def main():
+             affect_children = True
+         elif o in ("-G", "--cgroup"):
+             cgroups = True
++        elif o in ("-z", "--spaced"):
++            compact = False
+         elif o in ("-t", "--threads"):
+             # The -t - will reset thread list
+             if a == '-':
+@@ -691,7 +711,7 @@ def main():
+                 if thread_list_str or irq_list_str:
+                     continue
+             do_ps(thread_list, cpu_list, irq_list, uthreads,
+-                  kthreads, affect_children, show_sockets, cgroups)
++                  kthreads, affect_children, show_sockets, cgroups, compact)
+         elif o in ("-Q", "--show_irqs"):
+             # If the user specified IRQ names that weren't
+             # resolved to IRQs, don't show all IRQs.
+-- 
+2.38.1
+
