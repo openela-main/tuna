@@ -1,7 +1,7 @@
 Name: tuna
-Version: 0.18
-Release: 12%{?dist}
-License: GPLv2
+Version: 0.19
+Release: 4%{?dist}
+License: GPL-2.0-only AND LGPL-2.1-only
 Summary: Application tuning GUI & command line utility
 URL: https://git.kernel.org/pub/scm/utils/tuna/tuna.git
 Source: https://www.kernel.org/pub/software/utils/%{name}/%{name}-%{version}.tar.xz
@@ -13,19 +13,9 @@ Requires: python3-linux-procfs >= 0.6
 # Requires: python-inet_diag
 
 # Patches
-Patch1: tuna-Update-command-line-interface.patch
-Patch2: tuna-Move-get_policy_and_rtprio-call-to-parser-level.patch
-Patch3: tuna-Add-sockets-command-line-option.patch
-Patch4: tuna-Replace-python_ethtool-with-builtin-funtionalit.patch
-Patch5: tuna-Fix-matching-irqs-in-ps_show_thread.patch
-Patch6: tuna-Remove-threads-print-statement.patch
-Patch7: tuna-tuna_gui.py-use-fstrings.patch
-Patch8: tuna-tuna-cmd.py-use-fstrings.patch
-Patch9: tuna-tuna.py-use-fstrings.patch
-Patch10: tuna-remove-import-and-fix-help-message.patch
-Patch11: tuna-Update-manpages-for-argparse-CLI-changes.patch
-Patch12: tuna-Adapt-show_threads-cgroup-output-to-terminal-si.patch
-Patch13: tuna-Fix-show_threads-cgroups-run-without-a-term.patch
+Patch01: Add-SPDX-license-identifiers.patch
+Patch02: tuna-Remove-spec-file-from-git.patch
+Patch03: tuna-Don-t-start-the-gui-if-a-display-is-not-availab.patch
 
 %description
 Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
@@ -79,6 +69,24 @@ done
 %{_datadir}/polkit-1/actions/org.tuna.policy
 
 %changelog
+* Wed Dec 13 2023 John Kacur <jkacur@redhat.com> - 0.19-4
+- Add an rpminspect.yaml file
+Resolves: RHEL-19396
+
+* Wed Dec 13 2023 John Kacur <jkacur@redhat.com> - 0.19-3
+- Don't start the gui if a display is not available
+- Change to SPDX licence tag in the specfile
+Resolves: RHEL-8859
+
+* Thu Nov 02 2023 John Kacur <jkacur@redhat.com> - 0.19-2
+- Add SPDX licenses
+- Remove the git maintained spec file
+Resolves: RHEL-7611
+
+* Thu Nov 02 2023 John Kacur <jkacur@redhat.com> - 0.19-1
+- Update to latest upstream version, tuna-0.19
+Resolves: RHEL-7862
+
 * Wed Nov 23 2022 Leah Leshchinsky <lleshchi@redhat.com> - 0.18-12
 - Fix show_threads --cgroups run without term
 Resolves: rhbz#2121517

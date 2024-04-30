@@ -1,0 +1,357 @@
+From fbde2418c84e57723ae1698acfe5932a11f4d611 Mon Sep 17 00:00:00 2001
+From: Clark Williams <clrkwllms@kernel.org>
+Date: Thu, 17 Aug 2023 08:12:38 -0500
+Subject: [PATCH 1/2] Add SPDX license identifiers
+
+use SPDX license identifiers to clarify the licences under which
+tuna is released.
+
+Signed-off-by: Clark Williams <williams@redhat.com>
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ Makefile                |  3 +++
+ org.tuna.policy         |  1 +
+ oscilloscope-cmd.py     | 15 +--------------
+ setup.py                |  1 +
+ testuna                 | 10 +++++-----
+ tuna-cmd.py             |  9 +--------
+ tuna.desktop            |  1 +
+ tuna/__init__.py        |  2 +-
+ tuna/config.py          |  2 ++
+ tuna/gui/__init__.py    |  2 ++
+ tuna/gui/commonview.py  |  2 ++
+ tuna/gui/cpuview.py     |  1 +
+ tuna/gui/irqview.py     |  1 +
+ tuna/gui/procview.py    |  1 +
+ tuna/gui/profileview.py |  1 +
+ tuna/gui/util.py        |  1 +
+ tuna/new_eth.py         |  1 +
+ tuna/oscilloscope.py    | 15 +--------------
+ tuna/sysfs.py           |  2 ++
+ tuna/tuna.py            |  7 ++++---
+ tuna/tuna_gui.py        |  1 +
+ tuna/tuna_sched.py      |  1 +
+ 22 files changed, 35 insertions(+), 45 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 50ded3985743..a3d71d2de896 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,3 +1,6 @@
++#
++# SPDX-License-Identifier: GPL-2.0-only
++#
+ PACKAGE := tuna
+ VERSION := $(shell rpm -q --qf '%{VERSION} ' --specfile rpm/SPECS/$(PACKAGE).spec | cut -d' ' -f1)
+ 
+diff --git a/org.tuna.policy b/org.tuna.policy
+index 4f71d4ad65f4..b3b3900a4d76 100644
+--- a/org.tuna.policy
++++ b/org.tuna.policy
+@@ -1,4 +1,5 @@
+ <?xml version="1.0" encoding="UTF-8"?>
++<!-- SPDX-License-Identifier: GPL-2.0-only -->
+ <!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD polkit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/software/polkit/policyconfig-1.dtd">
+ <policyconfig>
+diff --git a/oscilloscope-cmd.py b/oscilloscope-cmd.py
+index 2ca87e9edc62..a65117637160 100755
+--- a/oscilloscope-cmd.py
++++ b/oscilloscope-cmd.py
+@@ -5,20 +5,7 @@
+ # http://git.kernel.org/?p=linux/kernel/git/acme/tuna.git;a=tree
+ # For newer versions and to see it integrated with tuna
+ #
+-# This library is free software; you can redistribute it and/or
+-# modify it under the terms of the GNU Lesser General Public
+-# License as published by the Free Software Foundation;
+-# version 2.1 of the License.
+-#
+-# This library is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-# Lesser General Public License for more details.
+-#
+-# You should have received a copy of the GNU Lesser General Public
+-# License along with this library; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+-# USA
++# SPDX-License-Identifier: LGPL-2.1-only
+ 
+ import getopt
+ import sys
+diff --git a/setup.py b/setup.py
+index db0f00735524..f119e75abdeb 100755
+--- a/setup.py
++++ b/setup.py
+@@ -1,4 +1,5 @@
+ #!/usr/bin/python3
++# SPDX-License-Identifier: GPL-2.0-only
+ import os
+ import sysconfig
+ from os.path import isfile, relpath
+diff --git a/testuna b/testuna
+index 4bf91ebdb76f..cb98640c0167 100755
+--- a/testuna
++++ b/testuna
+@@ -2,7 +2,7 @@
+ # Regression tests for tuna
+ # (c) 2008 Red Hat Inc.
+ # Arnaldo Carvalho de Melo <acme@redhat.com>
+-# Released under the GPLv2
++# SPDX-License-Identifier: GPL-2.0-only
+ 
+ dprint() {
+ 	[ -n "$VERBOSE" ] && echo $1
+@@ -111,21 +111,21 @@ PID=$(ktpidof "watchdog")
+ RTPRIO=$(get_rtprio $PID)
+ POLICY=$(get_policy $PID)
+ POLICY=$(echo ${POLICY:6:1} | tr 'A-Z' 'a-z')
+-chrt -$POLICY -p $((RTPRIO - 1)) $PID 
++chrt -$POLICY -p $((RTPRIO - 1)) $PID
+ 
+ die_if_not_saved 1 'Saving changes to a kernel thread priority'
+ 
+-chrt -$POLICY -p $RTPRIO $PID 
++chrt -$POLICY -p $RTPRIO $PID
+ 
+ die_if_conf_changed 'Restoring kernel thread priority'
+ 
+ new_policy=$(echo $POLICY | tr fr rf)
+ 
+-chrt -$new_policy -p $RTPRIO $PID 
++chrt -$new_policy -p $RTPRIO $PID
+ 
+ die_if_not_saved 1 'Changing kernel thread sched policy'
+ 
+-chrt -$POLICY -p $RTPRIO $PID 
++chrt -$POLICY -p $RTPRIO $PID
+ 
+ die_if_conf_changed 'Restoring kernel thread sched policy'
+ 
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 6a980598526f..e953869c4f48 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -5,14 +5,7 @@
+ #   Copyright (C) 2008, 2009, 2010, 2011 Red Hat Inc.
+ #   Arnaldo Carvalho de Melo <acme@redhat.com>
+ #
+-#   This application is free software; you can redistribute it and/or
+-#   modify it under the terms of the GNU General Public License
+-#   as published by the Free Software Foundation; version 2.
+-#
+-#   This application is distributed in the hope that it will be useful,
+-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-#   General Public License for more details.
++# SPDX-License-Identifier: GPL-2.0-only
+ 
+ """ tuna - Application Tuning Program"""
+ 
+diff --git a/tuna.desktop b/tuna.desktop
+index 603011f79467..87ca3a35ce63 100644
+--- a/tuna.desktop
++++ b/tuna.desktop
+@@ -1,3 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0-only
+ [Desktop Entry]
+ Name=tuna
+ GenericName=Application Tuner
+diff --git a/tuna/__init__.py b/tuna/__init__.py
+index 30924a00cf96..614e3e4c7ed8 100755
+--- a/tuna/__init__.py
++++ b/tuna/__init__.py
+@@ -4,4 +4,4 @@ Copyright (c) 2008, 2009 Red Hat Inc.
+ Application Tuning GUI
+ """
+ __author__ = "Arnaldo Carvalho de Melo <acme@redhat.com>"
+-__license__ = "GPLv2 License"
++__license__ = "SPDX-License-Identifier: GPL-2.0-only"
+diff --git a/tuna/config.py b/tuna/config.py
+index 09d26dd87029..63c9f23bb09b 100644
+--- a/tuna/config.py
++++ b/tuna/config.py
+@@ -1,3 +1,5 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
+ import io
+ import os
+ import re
+diff --git a/tuna/gui/__init__.py b/tuna/gui/__init__.py
+index ad1191c13d8d..a40f86292e6f 100755
+--- a/tuna/gui/__init__.py
++++ b/tuna/gui/__init__.py
+@@ -1,3 +1,5 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
+ """
+ Copyright (c) 2009  Red Hat Inc.
+ 
+diff --git a/tuna/gui/commonview.py b/tuna/gui/commonview.py
+index cc8f913819a2..8089ed154dae 100644
+--- a/tuna/gui/commonview.py
++++ b/tuna/gui/commonview.py
+@@ -1,3 +1,5 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
+ from gi.repository import Gtk
+ from tuna import tuna
+ 
+diff --git a/tuna/gui/cpuview.py b/tuna/gui/cpuview.py
+index cc3f0f905ae7..844705a4bb21 100755
+--- a/tuna/gui/cpuview.py
++++ b/tuna/gui/cpuview.py
+@@ -1,5 +1,6 @@
+ # -*- python -*-
+ # -*- coding: utf-8 -*-
++# SPDX-License-Identifier: GPL-2.0-only
+ 
+ from functools import reduce
+ 
+diff --git a/tuna/gui/irqview.py b/tuna/gui/irqview.py
+index 5143d6dc0df5..e89fb70197fc 100755
+--- a/tuna/gui/irqview.py
++++ b/tuna/gui/irqview.py
+@@ -1,5 +1,6 @@
+ # -*- python -*-
+ # -*- coding: utf-8 -*-
++# SPDX-License-Identifier: GPL-2.0-only
+ from tuna import tuna, gui
+ import procfs
+ from gi.repository import Gdk
+diff --git a/tuna/gui/procview.py b/tuna/gui/procview.py
+index 440a289a1b29..78d5f573dd49 100755
+--- a/tuna/gui/procview.py
++++ b/tuna/gui/procview.py
+@@ -1,3 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0-only
+ import re
+ import os
+ import tuna.tuna_sched as tuna_sched
+diff --git a/tuna/gui/profileview.py b/tuna/gui/profileview.py
+index 26f58cbc8f4f..7570bc0e57ce 100644
+--- a/tuna/gui/profileview.py
++++ b/tuna/gui/profileview.py
+@@ -1,3 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0-only
+ import os
+ import shutil
+ import gi
+diff --git a/tuna/gui/util.py b/tuna/gui/util.py
+index ec368ae4b2c9..92bd368179cc 100644
+--- a/tuna/gui/util.py
++++ b/tuna/gui/util.py
+@@ -1,3 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0-only
+ import errno
+ import os
+ import gi
+diff --git a/tuna/new_eth.py b/tuna/new_eth.py
+index 98f9179d5695..e2888d4cef36 100755
+--- a/tuna/new_eth.py
++++ b/tuna/new_eth.py
+@@ -1,4 +1,5 @@
+ # Copyright (C) 2022 John Kacur
++# SPDX-License-Identifier: GPL-2.0-only
+ """ A few functions similar to ethtool """
+ import os
+ import socket
+diff --git a/tuna/oscilloscope.py b/tuna/oscilloscope.py
+index 317fe4554c60..a44ace53ec27 100755
+--- a/tuna/oscilloscope.py
++++ b/tuna/oscilloscope.py
+@@ -8,20 +8,7 @@
+ # http://git.kernel.org/?p=linux/kernel/git/acme/tuna.git;a=tree
+ # For newer versions and to see it integrated with tuna
+ #
+-# This library is free software; you can redistribute it and/or
+-# modify it under the terms of the GNU Lesser General Public
+-# License as published by the Free Software Foundation;
+-# version 2.1 of the License.
+-#
+-# This library is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-# Lesser General Public License for more details.
+-#
+-# You should have received a copy of the GNU Lesser General Public
+-# License along with this library; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+-# USA
++# SPDX-License-Identifier: LGPL-2.1-only
+ 
+ import os
+ import sys
+diff --git a/tuna/sysfs.py b/tuna/sysfs.py
+index 1c903e106a44..cd2377a8df26 100755
+--- a/tuna/sysfs.py
++++ b/tuna/sysfs.py
+@@ -1,5 +1,7 @@
+ # -*- python -*-
+ # -*- coding: utf-8 -*-
++# SPDX-License-Identifier: GPL-2.0-only
++
+ """
+ classes for /sys/devices/system/cpu/
+ so we can get topology information and do CPU hotplug operations
+diff --git a/tuna/tuna.py b/tuna/tuna.py
+index e527facb151c..bd678e2dc7ae 100755
+--- a/tuna/tuna.py
++++ b/tuna/tuna.py
+@@ -1,5 +1,6 @@
+ # -*- python -*-
+ # -*- coding: utf-8 -*-
++# SPDX-License-Identifier: GPL-2.0-only
+ 
+ import copy
+ import errno
+@@ -647,12 +648,12 @@ def generate_rtgroups(filename, kthreads, nr_cpus):
+     f.write('''# Generated by tuna
+ #
+ # Use it with rtctl:
+-# 
++#
+ # rtctl --file %s reset
+ #
+ # Please use 'man rtctl' for more operations
+ #
+-# Associate processes into named groups with default priority and 
++# Associate processes into named groups with default priority and
+ # scheduling policy.
+ #
+ # Format is: <groupname>:<sched>:<prio>:<regex>
+@@ -661,7 +662,7 @@ def generate_rtgroups(filename, kthreads, nr_cpus):
+ # sched must be one of: 'f' (fifo)
+ #                       'b' (batch)
+ #                       'r' (round-robin)
+-#                       'o' (other) 
++#                       'o' (other)
+ #                       '*' (leave alone)
+ # regex is an awk regex
+ #
+diff --git a/tuna/tuna_gui.py b/tuna/tuna_gui.py
+index 459f90303ed5..cefee4a57697 100755
+--- a/tuna/tuna_gui.py
++++ b/tuna/tuna_gui.py
+@@ -1,5 +1,6 @@
+ # -*- python -*-
+ # -*- coding: utf-8 -*-
++# SPDX-License-Identifier: GPL-2.0-only
+ 
+ import sys
+ import os
+diff --git a/tuna/tuna_sched.py b/tuna/tuna_sched.py
+index de9846bb5fae..1051983e53f9 100644
+--- a/tuna/tuna_sched.py
++++ b/tuna/tuna_sched.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/python3
+ #   Copyright (C) 2022 John Kacur
++# SPDX-License-Identifier: GPL-2.0-only
+ """
+ Functions to translate a scheduling policy into either a string name or an
+ equivalent integer
+-- 
+2.41.0
+

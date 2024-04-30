@@ -1,0 +1,220 @@
+From 0c93bd0f26c3d7abda51e51a43ea979ecd794cc9 Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Wed, 18 Oct 2023 10:54:49 -0400
+Subject: [PATCH 2/2] tuna: Remove spec file from git
+
+The specfile should be maintained in the distribution and not upstream
+The specfile that is upstream is largely unmaintained anyway.
+This change also guts the Makefile which uses the specfile.
+Most of the functionality in the Makefile is available through tools
+such as rpmbuild anyway. Leaving the Makefile in place for a few
+minor things like makeing tagfiles
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ Makefile            |  39 +------------
+ rpm/SPECS/tuna.spec | 137 --------------------------------------------
+ 2 files changed, 3 insertions(+), 173 deletions(-)
+ delete mode 100644 rpm/SPECS/tuna.spec
+
+diff --git a/Makefile b/Makefile
+index a3d71d2de896..a55821a8f908 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,42 +1,8 @@
+ #
+ # SPDX-License-Identifier: GPL-2.0-only
+ #
+-PACKAGE := tuna
+-VERSION := $(shell rpm -q --qf '%{VERSION} ' --specfile rpm/SPECS/$(PACKAGE).spec | cut -d' ' -f1)
+-
+-rpmdirs:
+-	@[ -d rpm/BUILD ]   || mkdir rpm/BUILD
+-	@[ -d rpm/RPMS ]    || mkdir rpm/RPMS
+-	@[ -d rpm/SRPMS ]   || mkdir rpm/SRPMS
+-	@[ -d rpm/SOURCES ] || mkdir rpm/SOURCES
+-
+-bz2: rpmdirs
+-	git archive --format=tar --prefix=$(PACKAGE)-$(VERSION)/ HEAD | \
+-	bzip2 -9 > rpm/SOURCES/$(PACKAGE)-$(VERSION).tar.bz2
+-
+-rpm: bz2 rpmdirs
+-	rpmbuild -ba --define "_topdir $(PWD)/rpm" rpm/SPECS/$(PACKAGE).spec
+-
+-bz2dev: rpmdirs
+-	@mkdir -p /tmp/$(PACKAGE)-$(VERSION)
+-	@tar cf - `cat MANIFEST` | (cd /tmp/$(PACKAGE)-$(VERSION) ; tar xf -)
+-	@(cd /tmp; tar cf - $(PACKAGE)-$(VERSION)) | bzip2 -9 > rpm/SOURCES/$(PACKAGE)-$(VERSION).tar.bz2
+-
+-rpmdev: bz2dev rpmdirs
+-	rpmbuild -ba --define "_topdir $(PWD)/rpm" rpm/SPECS/$(PACKAGE).spec
+-
+-po/$(PACKAGE).pot:
+-	xgettext -k_ -kN_ -f po/POTFILES.in -o $@
+-
+-po/%.po: po/$(PACKAGE).pot
+-	msgmerge --suffix=.old -U $@ $< && rm -f $@.old
+-
+-rpmclean:
+-	@rm -f rpm/RPMS/*/$(PACKAGE)-$(VERSION)-*.rpm
+-	@rm -f rpm/SRPMS/$(PACKAGE)-$(VERSION)-*.src.rpm
+-	@rm -f rpm/SOURCES/$(PACKAGE)-$(VERSION).tar.bz2
+-	@rm -rf rpm/BUILD/$(PACKAGE)-$(VERSION)*
+ 
++.PHONY: pyclean
+ pyclean:
+ 	@find . -type f \( -name \*~ -o -name \*.pyc \) -delete
+ 
+@@ -52,4 +18,5 @@ cleantags:
+ cleanlogs:
+ 	rm -rf tuna-20*
+ 
+-clean: pyclean rpmclean
++.PHONY: clean
++clean: pyclean
+diff --git a/rpm/SPECS/tuna.spec b/rpm/SPECS/tuna.spec
+deleted file mode 100644
+index eca96c833265..000000000000
+--- a/rpm/SPECS/tuna.spec
++++ /dev/null
+@@ -1,137 +0,0 @@
+-Name: tuna
+-Version: 0.15
+-Release: 1%{?dist}
+-License: GPLv2
+-Summary: Application tuning GUI & command line utility
+-Group: Applications/System
+-Source: http://userweb.kernel.org/~acme/tuna/%{name}-%{version}.tar.bz2
+-URL: http://userweb.kernel.org/~acme/tuna/
+-BuildArch: noarch
+-BuildRequires: python-devel, gettext, desktop-file-utils
+-Requires: python-ethtool
+-Requires: python-linux-procfs >= 0.6
+-# This really should be a Suggests...
+-# Requires: python-inet_diag
+-BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+-
+-%description
+-Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
+-per thread/IRQ level. Allows isolating CPUs for use by a specific application
+-and moving threads and interrupts to a CPU by just dragging and dropping them.
+-Operations can be done on CPU sockets, understanding CPU topology.
+-
+-Can be used as a command line utility without requiring the GUI libraries to be
+-installed.
+-
+-%package -n oscilloscope
+-Summary: Generic graphical signal plotting tool
+-Group: Applications/System
+-Requires: python-matplotlib
+-Requires: numpy
+-Requires: pygtk2
+-Requires: tuna = %{version}-%{release}
+-
+-%description -n oscilloscope
+-Plots stream of values read from standard input on the screen together with
+-statistics and a histogram.
+-
+-Allows to instantly see how a signal generator, such as cyclictest, signaltest
+-or even ping, reacts when, for instance, its scheduling policy or real time
+-priority is changed, be it using tuna or plain chrt & taskset.
+-
+-%prep
+-%setup -q
+-
+-%build
+-%{python3} setup.py build
+-
+-%install
+-rm -rf %{buildroot}
+-%{python3} setup.py install --skip-build --root %{buildroot}
+-mkdir -p %{buildroot}/%{_sysconfdir}/tuna/
+-mkdir -p %{buildroot}/{%{_bindir},%{_datadir}/tuna/help/kthreads,%{_mandir}/man8}
+-mkdir -p %{buildroot}/%{_datadir}/polkit-1/actions/
+-install -p -m644 tuna/tuna_gui.glade %{buildroot}/%{_datadir}/tuna/
+-install -p -m755 tuna-cmd.py %{buildroot}/%{_bindir}/tuna
+-install -p -m755 oscilloscope-cmd.py %{buildroot}/%{_bindir}/oscilloscope
+-install -p -m644 help/kthreads/* %{buildroot}/%{_datadir}/tuna/help/kthreads/
+-install -p -m644 docs/tuna.8 %{buildroot}/%{_mandir}/man8/
+-install -p -m644 etc/tuna/example.conf %{buildroot}/%{_sysconfdir}/tuna/
+-install -p -m644 etc/tuna.conf %{buildroot}/%{_sysconfdir}/
+-install -p -m644 org.tuna.policy %{buildroot}/%{_datadir}/polkit-1/actions/
+-desktop-file-install --dir=%{buildroot}/%{_datadir}/applications tuna.desktop
+-
+-# l10n-ed message catalogues
+-for lng in `cat po/LINGUAS`; do
+-        po=po/"$lng.po"
+-        mkdir -p %{buildroot}/%{_datadir}/locale/${lng}/LC_MESSAGES
+-        msgfmt $po -o %{buildroot}/%{_datadir}/locale/${lng}/LC_MESSAGES/%{name}.mo
+-done
+-
+-%find_lang %name
+-
+-%clean
+-rm -rf %{buildroot}
+-
+-%files -f %{name}.lang
+-%defattr(-,root,root,-)
+-%doc ChangeLog
+-%if "%{python_ver}" >= "2.5"
+-%{python2_sitelib}/*.egg-info
+-%endif
+-%{_bindir}/tuna
+-%{_datadir}/tuna/
+-%{python3_sitelib}/tuna/
+-%{_mandir}/man8/tuna.8*
+-%{_sysconfdir}/tuna.conf
+-%{_sysconfdir}/tuna/*
+-%{_datadir}/polkit-1/actions/org.tuna.policy
+-%{_datadir}/applications/tuna.desktop
+-
+-%files -n oscilloscope
+-%defattr(-,root,root,-)
+-%{_bindir}/oscilloscope
+-%doc docs/oscilloscope+tuna.html
+-%doc docs/oscilloscope+tuna.pdf
+-
+-%changelog
+-* Fri Feb  1 2013 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.10.4-1
+-- New upstream release
+-
+-* Fri Aug 24 2012 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.10.3-1
+-- New upstream release
+-
+-* Thu Jul 28 2011 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.10.2-1
+-- New upstream release
+-
+-* Wed Feb 23 2011 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.10.1-1
+-- New upstream release
+-
+-* Wed Feb 23 2011 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.10-1
+-- New upstream release
+-
+-* Mon May 17 2010 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.9.3-1
+-- New upstream release
+-- Fixes the folowing bugzilla.redhat.com tickets:
+-- 563355 error in tuna --help output
+-- 574950 cannot use cpu ranges in the tuna GUI
+-- 559770 tuna backtrace when moving threads
+-- 563352 tuna backtrace when no thread list is given for --priority
+-- 563350 tuna backtrace when scheduler is mis-typed.
+-
+-* Thu Nov 12 2009 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.9.2-1
+-- New upstream release
+-
+-* Thu Sep 03 2009 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.9.1-1
+-- New upstream release
+-
+-* Wed Aug 26 2009 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.9-3
+-- Rewrite the oscilloscope package summary
+-- Remove the shebang in tuna/oscilloscope.py
+-
+-* Mon Aug 17 2009 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.9-2
+-- Use install -p
+-- Add BuildRequires for gettext
+-
+-* Fri Jul 10 2009 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.9-1
+-- Fedora package reviewing changes: introduce ChangeLog file
+-- 
+2.41.0
+
