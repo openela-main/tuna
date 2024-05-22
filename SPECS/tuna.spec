@@ -1,7 +1,7 @@
 Name: tuna
 Version: 0.18
-Release: 6%{?dist}
-License: GPLv2
+Release: 9%{?dist}
+License: GPL-2.0-only AND LGPL-2.1-only
 Summary: Application tuning GUI & command line utility
 Group: Applications/System
 Source: https://www.kernel.org/pub/software/utils/tuna/%{name}-%{version}.tar.xz
@@ -22,6 +22,9 @@ Patch4: tuna-tuna_gui.py-use-fstrings.patch
 Patch5: tuna-tuna-cmd.py-use-fstrings.patch
 Patch6: tuna-Adapt-show_threads-cgroup-output-to-terminal-si.patch
 Patch7: tuna-Fix-show_threads-cgroup-without-a-term.patch
+Patch8: Add-SPDX-license-identifiers.patch
+Patch9: tuna-Remove-spec-file-from-git.patch
+Patch10: tuna-Don-t-start-the-gui-if-a-display-is-not-availab.patch
 
 %description
 Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
@@ -80,6 +83,21 @@ rm -rf %{buildroot}
 %{_datadir}/polkit-1/actions/org.tuna.policy
 
 %changelog
+* Wed Dec 13 2023 John Kacur <jkacur@redhat.com> - 0.18-9
+- Don't start the gui if a display is not available
+- Revert removing distutils for rhel8
+- Update the License tag in the specfile to the spdx version
+Resolves: RHEL-19179
+
+* Mon Dec 11 2023 John Kacur <jkacur@redhat.com> - 0.18-8
+- Remove deprecated distutils from setup
+- Adjust SPDX patch to accomdate the removed distutils
+Resolves: RHEL-19037
+
+* Wed Nov 01 2023 John Kacur <jkacur@redhat.com> - 0.18-7
+- Remove specfile from upstream source
+Resolves: RHEL-9197
+
 * Wed Nov 23 2022 Leah Leshchinsky <lleshchi@redhat.com> - 0.18-6
 - Fix show_threads --cgroups without a term
 Resolves: rhbz#2121518
