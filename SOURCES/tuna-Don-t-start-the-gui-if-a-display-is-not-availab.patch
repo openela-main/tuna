@@ -1,0 +1,34 @@
+From 5c2ff1e15bbce8d76a038de55abc20e8b3164bb7 Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Mon, 11 Dec 2023 16:35:03 -0500
+Subject: [PATCH] tuna: Don't start the gui if a display is not available
+
+This is intended for the main branch of tuna.
+
+Don't start the gui if a display is not available.
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ tuna-cmd.py | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index e953869c4f48..f37e286bffdb 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -736,6 +736,12 @@ def main():
+             thread_help(tid)
+ 
+     elif args.command in ['g', 'gui']:
++        # Don't try to start the gui if no display is available
++        display = os.getenv("DISPLAY")
++        if not display:
++            parser.print_help()
++            return
++
+         try:
+             from tuna import tuna_gui
+         except ImportError:
+-- 
+2.42.0
+
