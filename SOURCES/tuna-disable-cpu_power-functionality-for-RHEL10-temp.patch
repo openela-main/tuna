@@ -1,0 +1,62 @@
+From 61b20a8a9323b59042f3cfc4421b3378dd96a1d4 Mon Sep 17 00:00:00 2001
+From: "John B. Wyatt IV" <jwyatt@redhat.com>
+Date: Tue, 29 Jul 2025 10:29:21 -0400
+Subject: [PATCH] tuna: disable cpu_power functionality for RHEL10 temporarily.
+
+At the time libcpupower's bindings were not backported to Stream/RHEL10. This
+issue will be resolved in a future release. Disable cpu_power subcommand
+from showing.
+
+Signed-off-by: John B. Wyatt IV <jwyatt@redhat.com>
+---
+ tuna-cmd.py | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index d0a3e6b..c8e1cbd 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -91,7 +91,7 @@ def gen_parser():
+ 
+ 
+     POS = {
+-            "cpu_list": dict(metavar='CPU-LIST', type=tuna.cpustring_to_list, help="CPU-LIST affected by commands"),
++            # "cpu_list": dict(metavar='CPU-LIST', type=tuna.cpustring_to_list, help="CPU-LIST affected by commands"), # disable currently in RHEL9; please use RHEL10 or later
+             "thread_list": dict(metavar='THREAD-LIST', type=threadstring_to_list, help="THREAD-LIST affected by commands"),
+             "filename": dict(metavar='FILENAME', type=str, help="Save kthreads sched tunables to this file"),
+             "profilename": dict(type=str, help="Apply changes described in this file"),
+@@ -133,9 +133,9 @@ def gen_parser():
+ 
+     subparser = parser.add_subparsers(dest='command')
+ 
+-    idle_set = subparser.add_parser('cpu_power',
+-                                    description='Manage CPU idle state disabling (requires libcpupower and it\'s Python bindings)',
+-                                    help='Set all idle states on a given CPU-LIST.')
++    # idle_set = subparser.add_parser('cpu_power',
++    #                                 description='Manage CPU idle state disabling (requires libcpupower and it\'s Python bindings)',
++    #                                 help='Set all idle states on a given CPU-LIST.')
+     isolate = subparser.add_parser('isolate', description="Move all allowed threads and IRQs away from CPU-LIST",
+                                     help="Move all allowed threads and IRQs away from CPU-LIST")
+     include = subparser.add_parser('include', description="Allow all threads to run on CPU-LIST",
+@@ -228,12 +228,12 @@ def gen_parser():
+     show_irqs_group.add_argument('-S', '--sockets', **MODS['sockets'])
+     show_irqs.add_argument('-q', '--irqs', **MODS['irqs'])
+ 
+-    idle_set_group = idle_set.add_mutually_exclusive_group(required=True)
+-    idle_set_group.add_argument('-i', '--idle-info', **MODS['idle_info'])
+-    idle_set_group.add_argument('-s', '--status', **MODS['idle_state_disabled_status'])
+-    idle_set_group.add_argument('-d', '--disable', **MODS['disable_idle_state'])
+-    idle_set_group.add_argument('-e', '--enable', **MODS['enable_idle_state'])
+-    idle_set.add_argument('-c', '--cpus', **MODS['cpus'])
++    # idle_set_group = idle_set.add_mutually_exclusive_group(required=True)
++    # idle_set_group.add_argument('-i', '--idle-info', **MODS['idle_info'])
++    # idle_set_group.add_argument('-s', '--status', **MODS['idle_state_disabled_status'])
++    # idle_set_group.add_argument('-d', '--disable', **MODS['disable_idle_state'])
++    # idle_set_group.add_argument('-e', '--enable', **MODS['enable_idle_state'])
++    # idle_set.add_argument('-c', '--cpus', **MODS['cpus'])
+ 
+     what_is.add_argument('thread_list', **POS['thread_list'])
+ 
+-- 
+2.50.1
+

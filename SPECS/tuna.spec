@@ -2,7 +2,7 @@
 
 Name: tuna
 Version: 0.19
-Release: 9%{?dist}
+Release: 16%{?dist}
 License: GPL-2.0-only AND LGPL-2.1-only
 Summary: Application tuning GUI & command line utility
 Source: https://www.kernel.org/pub/software/utils/%{name}/%{name}-%{version}.tar.xz
@@ -18,6 +18,18 @@ Requires: python3-linux-procfs >= 0.7.3
 Patch1: 0001-Add-SPDX-license-identifiers.patch
 Patch2: 0002-tuna-Remove-spec-file-from-git.patch
 Patch3: tuna-Don-t-start-the-gui-if-a-display-is-not-availab.patch
+Patch4: 0001-tuna-extract-common-cpu-and-nics-determination-code-.patch
+Patch5: 0002-tuna-Add-idle_state-control-functionality.patch
+Patch6: 0003-tuna-utils-A-few-tweaks.patch
+Patch7: tuna-Fix-string-syntax-warnings-with-raw-strings.patch
+Patch8: 0001-tuna-Fix-help.py-syntax-warnings.patch
+Patch9: 0002-tuna-help.py.patch
+Patch10: tuna-Update-man-page-with-cpu_power-command.patch
+Patch11: tuna-Fix-show_threads-t-and-show_irqs-q.patch
+Patch12: tuna-Fix-run-command-failing-to-apply-BATCH-policy.patch
+Patch13: tuna-Add-U-and-K-to-the-move-command.patch
+Patch14: tuna-disable-cpu_power-functionality-for-RHEL10-temp.patch
+Patch15: Revert-tuna-Update-man-page-with-cpu_power-command-f.patch
 
 %description
 Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
@@ -29,10 +41,7 @@ Can be used as a command line utility without requiring the GUI libraries to be
 installed.
 
 %prep
-%setup -q
-%patch 1 -p1
-%patch 2 -p1
-%patch 3 -p1
+%autosetup -v -p1
 
 %build
 %py3_build
@@ -74,6 +83,40 @@ done
 %{_datadir}/polkit-1/actions/org.tuna.policy
 
 %changelog
+* Wed Aug 13 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-16
+- Revert tuna man page changes for cpu_power
+Resolves: RHEL-108936
+
+* Tue Aug 12 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-15
+- Disable cpu_power command temporarily
+Resolves: RHEL-108936
+
+* Wed Aug 06 2025 John Kacur <jkacur@redhat.com> - 0.19-14
+- Update man page with cpu_power command
+- Fix show_threads -t and show_irqs -q to not match everything if no match
+- Fix run command failing to apply BATCH policy
+- Add -U and -K to the move command
+Resolves: RHEL-107914 RHEL-106070 RHEL-93776 RHEL-106068
+
+* Thu Jul 31 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-13
+- Applied tuna: Fix help.py syntax warnings and tuna: help.py
+- Requested to remove resolves statement from previous entry.
+Resolves: RHEL-106290
+
+* Thu Jul 31 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-12
+- Reverting the previous syntax warnings fix patch and replacing it with the
+tuna-Fix-string-syntax-warnings-with-raw-strings patch.
+Resolves: RHEL-106288
+
+* Wed Jul 30 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-11
+- Fix syntax warnings
+- Switch RHEL10 pkg to use autosetup like c9s does in tuna, -v makes it more verbose
+Resolves: RHEL-106288
+
+* Thu Apr 10 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-10
+- Add cpu_power cmd
+  Resolves: RHEL-61750
+
 * Tue Oct 29 2024 Troy Dawson <tdawson@redhat.com> - 0.19-9
 - Bump release for October 2024 mass rebuild:
   Resolves: RHEL-64018
