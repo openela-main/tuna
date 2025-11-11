@@ -1,0 +1,54 @@
+From 59475dfad6c040654307dd7ee3427437b72a13ed Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Wed, 9 Apr 2025 18:20:13 -0400
+Subject: [PATCH 3/3] tuna: utils: A few tweaks
+
+- Change copyright to 2025
+- Use is not None instead of !=
+- Add a few document strings
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ tuna/utils.py | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/tuna/utils.py b/tuna/utils.py
+index f55432d..75900bd 100644
+--- a/tuna/utils.py
++++ b/tuna/utils.py
+@@ -1,8 +1,8 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+-# Copyright (C) 2024 John B. Wyatt IV
++# Copyright (C) 2025 John B. Wyatt IV
++""" Module to return cpus and nics """
+ 
+ import os
+-
+ import tuna.new_eth as ethtool
+ 
+ # Collect a few globals and functions so they can be reused in other modules
+@@ -12,17 +12,19 @@ nics = None
+ def get_nr_cpus():
+     """ Get all cpus including disabled cpus """
+     global nr_cpus
+-    if nr_cpus != None:
++    if nr_cpus is not None:
+         return nr_cpus
+     nr_cpus = os.sysconf('SC_NPROCESSORS_CONF')
+     return nr_cpus
+ 
+ def get_all_cpu_list():
++    """ Return a list of all cpus """
+     return list(range(get_nr_cpus()))
+ 
+ def get_nics():
++    """ Return a list of network devices """
+     global nics
+-    if nics != None:
++    if nics is not None:
+         return nics
+     nics = ethtool.get_active_devices()
+     return nics
+-- 
+2.49.0
+

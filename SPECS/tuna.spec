@@ -1,6 +1,6 @@
 Name: tuna
 Version: 0.19
-Release: 4%{?dist}
+Release: 9%{?dist}
 License: GPL-2.0-only AND LGPL-2.1-only
 Summary: Application tuning GUI & command line utility
 URL: https://git.kernel.org/pub/scm/utils/tuna/tuna.git
@@ -16,6 +16,17 @@ Requires: python3-linux-procfs >= 0.6
 Patch01: Add-SPDX-license-identifiers.patch
 Patch02: tuna-Remove-spec-file-from-git.patch
 Patch03: tuna-Don-t-start-the-gui-if-a-display-is-not-availab.patch
+Patch04: 0001-tuna-extract-common-cpu-and-nics-determination-code-.patch
+Patch05: 0002-tuna-Add-idle_state-control-functionality.patch
+Patch06: 0003-tuna-utils-A-few-tweaks.patch
+Patch07: tuna-replace-match-with-if-statements-as-a-workaroun.patch
+Patch08: tuna-Fix-string-syntax-warnings-with-raw-strings.patch
+Patch09: 0001-tuna-Fix-help.py-syntax-warnings.patch
+Patch10: 0002-tuna-help.py.patch
+Patch11: tuna-Fix-show_threads-t-and-show_irqs-q.patch
+Patch12: tuna-Fix-run-command-failing-to-apply-BATCH-policy.patch
+Patch13: tuna-Add-U-and-K-to-the-move-command.patch
+Patch14: tuna-disable-cpu_power-functionality-for-RHEL9-curre.patch
 
 %description
 Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
@@ -27,7 +38,7 @@ Can be used as a command line utility without requiring the GUI libraries to be
 installed.
 
 %prep
-%autosetup -p1
+%autosetup -v -p1
 
 %build
 %py3_build
@@ -69,6 +80,29 @@ done
 %{_datadir}/polkit-1/actions/org.tuna.policy
 
 %changelog
+* Wed Aug 06 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-9
+- Disable cpu_power from showing in help menu and checking for cpu_power
+match functionality.
+Resolves: RHEL-107847
+
+* Wed Aug 06 2025 John Kacur <jkacur@redhat.com> - 0.19-8
+- Fix show_threads -t and show_irqs -q to not match everything if no match
+- Fix run command failing to apply BATCH policy
+- Add -U and -K to the move command
+Resolves: RHEL-86862 RHEL-106065 RHEL-106066
+
+* Thu Jul 31 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-7
+- Applied tuna: Fix help.py syntax warnings and tuna: help.py
+Resolves: RHEL-106289
+
+* Thu Jul 31 2025 John B. Wyatt IV - 0.19-6
+- Fix syntax warnings with raw strings
+Resolves: RHEL-106287
+
+* Tue Jul 29 2025 John B. Wyatt IV - 0.19-5
+- Add cpu_power command
+Resolves: RHEL-106293
+
 * Wed Dec 13 2023 John Kacur <jkacur@redhat.com> - 0.19-4
 - Add an rpminspect.yaml file
 Resolves: RHEL-19396

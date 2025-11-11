@@ -1,0 +1,31 @@
+From 12633d556c48d4491eae3c25962591a2c9cd6c94 Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Thu, 5 Jun 2025 11:54:42 -0400
+Subject: [PATCH 3/4] tuna: Fix run command failing to apply BATCH policy
+
+When using tuna run with -p BATCH the newly spawned process is created
+with SCHED_OTHER instead of SCHED_BATCH
+
+Fix this by calling thread_set_priority if the policy is not zero
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ tuna/tuna.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tuna/tuna.py b/tuna/tuna.py
+index d4c3e2c1a661..1380df0dadba 100755
+--- a/tuna/tuna.py
++++ b/tuna/tuna.py
+@@ -621,7 +621,7 @@ def run_command(cmd, policy, rtprio, cpu_list, background):
+     if newpid == 0:
+         cmd_list = shlex.split(cmd)
+         pid = os.getpid()
+-        if rtprio:
++        if rtprio or policy:
+             try:
+                 thread_set_priority(pid, policy, rtprio)
+             except (SystemError, OSError) as err:
+-- 
+2.49.0
+

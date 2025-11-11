@@ -1,0 +1,113 @@
+From 1cfc9be610290f992299071d79031762cccbe2e6 Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Fri, 30 May 2025 15:26:41 -0400
+Subject: [PATCH 2/4] tuna: Fix show_threads -t and show_irqs -q
+
+Fix show_threads -t and show_irqs -q to not match everything if there is
+no match.
+
+jkacur@fionn:~/src/tuna$ ./tuna-cmd.py show_threads | wc -l
+428
+jkacur@fionn:~/src/tuna$ ./tuna-cmd.py show_threads -t "nosuchthread" | wc -l
+0
+jkacur@fionn:~/src/tuna$ ./tuna-cmd.py show_threads -t "Isolated*" | wc -l
+55
+
+jkacur@fionn:~/src/tuna$ ./tuna-cmd.py show_irqs -q "iwlwifi*" | wc -l
+14
+jkacur@fionn:~/src/tuna$ ./tuna-cmd.py show_irqs | wc -l
+58
+jkacur@fionn:~/src/tuna$ ./tuna-cmd.py show_irqs -q "nosuchirq" | wc -l
+0
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ tuna-cmd.py | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 4997eaa5de92..9496c61f0c2b 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -79,6 +79,7 @@ except:
+ 
+ ps = None
+ irqs = None
++match_requested = False
+ 
+ class HelpMessageParser(argparse.ArgumentParser):
+     def error(self, message):
+@@ -391,6 +392,8 @@ def ps_show(ps, affect_children, thread_list, cpu_list,
+             irq_list_numbers, show_uthreads, show_kthreads,
+             has_ctxt_switch_info, sock_inodes, sock_inode_re, cgroups, compact):
+ 
++    global match_requested
++
+     ps_list = []
+     for pid in list(ps.keys()):
+         iskth = tuna.iskthread(pid)
+@@ -422,7 +425,11 @@ def ps_show(ps, affect_children, thread_list, cpu_list,
+             raise e
+         if cpu_list and not set(cpu_list).intersection(set(affinity)):
+             continue
+-        ps_list.append(pid)
++        if match_requested and thread_list and pid in thread_list:
++            ps_list.append(pid)
++        elif not match_requested:
++            ps_list.append(pid)
++
+ 
+     ps_list.sort()
+ 
+@@ -498,6 +505,7 @@ def find_drivers_by_users(users):
+ 
+ def show_irqs(irq_list, cpu_list):
+     global irqs
++    global match_requested
+     if not irqs:
+         irqs = procfs.interrupts()
+ 
+@@ -515,7 +523,11 @@ def show_irqs(irq_list, cpu_list):
+ 
+         if cpu_list and not set(cpu_list).intersection(set(affinity)):
+             continue
+-        sorted_irqs.append(irqn)
++
++        if match_requested and irq_list and irqn in irq_list:
++            sorted_irqs.append(irqn)
++        elif not match_requested:
++            sorted_irqs.append(irqn)
+ 
+     sorted_irqs.sort()
+     for irq in sorted_irqs:
+@@ -540,6 +552,9 @@ def do_list_op(op, current_list, op_list):
+ 
+ def threadstring_to_list(threadstr):
+     global ps
++    global match_requested
++    if threadstr:
++        match_requested = True
+     thread_list = []
+     thread_strings = list(set(threadstr.split(',')))
+     for s in thread_strings:
+@@ -555,6 +570,9 @@ def threadstring_to_list(threadstr):
+ 
+ def irqstring_to_list(irqstr):
+ 
++    global match_requested
++    if irqstr:
++        match_requested = True
+     irq_list = []
+     irq_strings = list(set(irqstr.split(',')))
+     for s in irq_strings:
+@@ -636,6 +654,7 @@ def nohz_full_to_cpu():
+               _(" needs nohz_full=cpulist on the kernel command line"))
+         sys.exit(2)
+ 
++
+ def main():
+     global ps
+ 
+-- 
+2.49.0
+
