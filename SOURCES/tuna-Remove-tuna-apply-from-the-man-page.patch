@@ -1,0 +1,48 @@
+From 09ba81b4a78d98ce8a8e289842571f19416cdaea Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Mon, 12 Jan 2026 15:24:07 -0500
+Subject: [PATCH 2/2] tuna: Remove tuna apply from the man page
+
+tuna apply has been disabled so remove it from the man page
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ docs/tuna.8 | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/docs/tuna.8 b/docs/tuna.8
+index 6e30537e9509..8c15c2ef535c 100644
+--- a/docs/tuna.8
++++ b/docs/tuna.8
+@@ -169,17 +169,17 @@ optional arguments:
+   -t THREAD-LIST, --threads THREAD-LIST
+                         THREAD-LIST affected by commands
+ .TP
+-\fBtuna apply\fR
+-usage: tuna-cmd.py apply [-h] profilename
+-
+-Apply changes described in profile
+-
+-positional arguments:
+-  profilename  Apply changes described in this file
+-
+-optional arguments:
+-  -h, --help   show this help message and exit
+-
++.\"\fBtuna apply\fR
++.\"usage: tuna-cmd.py apply [-h] profilename
++.\"
++.\"Apply changes described in profile
++.\"
++.\"positional arguments:
++.\"  profilename  Apply changes described in this file
++.\"
++.\"optional arguments:
++.\"  -h, --help   show this help message and exit
++.\"
+ .TP
+ \fBtuna show_threads\fR
+ usage: tuna-cmd.py show_threads [-h] [-c CPU-LIST | -N | -S CPU-SOCKET-LIST]
+-- 
+2.52.0
+

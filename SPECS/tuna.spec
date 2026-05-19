@@ -1,6 +1,6 @@
 Name: tuna
-Version: 0.19
-Release: 9%{?dist}
+Version: 0.20
+Release: 2%{?dist}
 License: GPL-2.0-only AND LGPL-2.1-only
 Summary: Application tuning GUI & command line utility
 URL: https://git.kernel.org/pub/scm/utils/tuna/tuna.git
@@ -13,20 +13,8 @@ Requires: python3-linux-procfs >= 0.6
 # Requires: python-inet_diag
 
 # Patches
-Patch01: Add-SPDX-license-identifiers.patch
-Patch02: tuna-Remove-spec-file-from-git.patch
-Patch03: tuna-Don-t-start-the-gui-if-a-display-is-not-availab.patch
-Patch04: 0001-tuna-extract-common-cpu-and-nics-determination-code-.patch
-Patch05: 0002-tuna-Add-idle_state-control-functionality.patch
-Patch06: 0003-tuna-utils-A-few-tweaks.patch
-Patch07: tuna-replace-match-with-if-statements-as-a-workaroun.patch
-Patch08: tuna-Fix-string-syntax-warnings-with-raw-strings.patch
-Patch09: 0001-tuna-Fix-help.py-syntax-warnings.patch
-Patch10: 0002-tuna-help.py.patch
-Patch11: tuna-Fix-show_threads-t-and-show_irqs-q.patch
-Patch12: tuna-Fix-run-command-failing-to-apply-BATCH-policy.patch
-Patch13: tuna-Add-U-and-K-to-the-move-command.patch
-Patch14: tuna-disable-cpu_power-functionality-for-RHEL9-curre.patch
+Patch1: tuna-Disable-the-tuna-apply-functionality.patch
+Patch2: tuna-Remove-tuna-apply-from-the-man-page.patch
 
 %description
 Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
@@ -42,12 +30,16 @@ installed.
 
 %build
 %py3_build
-pathfix.py -pni "%{__python3} %{py3_shbang_opts}" tuna/
-pathfix.py -pni "%{__python3} %{py3_shbang_opts}" tuna-cmd.py
+%py3_shebang_fix tuna/
+%py3_shebang_fix tuna-cmd.py
 
 %install
 rm -rf %{buildroot}
 %py3_install
+
+# Remove oscilloscope (unsupported in RHEL)
+rm -f %{buildroot}/%{_bindir}/oscilloscope
+
 mkdir -p %{buildroot}/%{_sysconfdir}/tuna/
 mkdir -p %{buildroot}/{%{_bindir},%{_datadir}/tuna/help/kthreads,%{_mandir}/man8}
 mkdir -p %{buildroot}/%{_datadir}/polkit-1/actions/
@@ -80,6 +72,25 @@ done
 %{_datadir}/polkit-1/actions/org.tuna.policy
 
 %changelog
+* Mon Jan 12 2026 John Kacur <jkacur@redhat.com> - 0.20-2
+- Disable tuna apply
+Resolves: RHEL-140839
+
+* Tue Oct 28 2025 John Kacur <jkacur@redhat.com> - 0.20-1
+- Update to upstream version 0.20
+- Remove all patches (now included in upstream)
+- Remove oscilloscope (unsupported in RHEL)
+Resolves: RHEL-83079
+
+* Tue Oct 07 2025 John Kacur <jkacur@redhat.com> - 0.19-11
+- When a realtime scheduling policy is used, default the prio to 1
+Resolves: RHEL-106072
+
+* Wed Oct 01 2025 John Kacur <jkacur@redhat.com> - 0.19-10
+- Add -U and -K to the spread command
+- Add a few clean-ups
+Resolves: RHEL-108968
+
 * Wed Aug 06 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-9
 - Disable cpu_power from showing in help menu and checking for cpu_power
 match functionality.
