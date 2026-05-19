@@ -1,35 +1,25 @@
 %bcond oscilloscope %{undefined rhel}
 
 Name: tuna
-Version: 0.19
-Release: 16%{?dist}
+Version: 0.20
+Release: 4%{?dist}
 License: GPL-2.0-only AND LGPL-2.1-only
 Summary: Application tuning GUI & command line utility
 Source: https://www.kernel.org/pub/software/utils/%{name}/%{name}-%{version}.tar.xz
 URL: https://rt.wiki.kernel.org/index.php/Tuna
 BuildArch: noarch
-BuildRequires: python3-devel, gettext
+BuildRequires: python3-devel
+BuildRequires: pyproject-rpm-macros
+BuildRequires: python3-pip
 BuildRequires: python3-setuptools
-Requires: python3-linux-procfs >= 0.7.3
+BuildRequires: python3-wheel
+BuildRequires: gettext
 # This really should be a Suggests...
 # Requires: python-inet_diag
 
 # Patches
-Patch1: 0001-Add-SPDX-license-identifiers.patch
-Patch2: 0002-tuna-Remove-spec-file-from-git.patch
-Patch3: tuna-Don-t-start-the-gui-if-a-display-is-not-availab.patch
-Patch4: 0001-tuna-extract-common-cpu-and-nics-determination-code-.patch
-Patch5: 0002-tuna-Add-idle_state-control-functionality.patch
-Patch6: 0003-tuna-utils-A-few-tweaks.patch
-Patch7: tuna-Fix-string-syntax-warnings-with-raw-strings.patch
-Patch8: 0001-tuna-Fix-help.py-syntax-warnings.patch
-Patch9: 0002-tuna-help.py.patch
-Patch10: tuna-Update-man-page-with-cpu_power-command.patch
-Patch11: tuna-Fix-show_threads-t-and-show_irqs-q.patch
-Patch12: tuna-Fix-run-command-failing-to-apply-BATCH-policy.patch
-Patch13: tuna-Add-U-and-K-to-the-move-command.patch
-Patch14: tuna-disable-cpu_power-functionality-for-RHEL10-temp.patch
-Patch15: Revert-tuna-Update-man-page-with-cpu_power-command-f.patch
+Patch1: tuna-Disable-the-tuna-apply-functionality.patch
+Patch2: tuna-Remove-tuna-apply-from-the-man-page.patch
 
 %description
 Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
@@ -42,22 +32,35 @@ installed.
 
 %prep
 %autosetup -v -p1
+# Delete setup.py so pyproject.toml build doesn't use it
+rm -f setup.py
+# Prepare tuna script for installation (save to a separate location to avoid directory conflict)
+cp -p tuna-cmd.py %{_builddir}/tuna-script
+# Compress man page
+gzip -c docs/tuna.8 > %{_builddir}/tuna.8.gz
+
+%generate_buildrequires
+%pyproject_buildrequires
 
 %build
-%py3_build
-%py3_shebang_fix tuna/
-%py3_shebang_fix tuna-cmd.py
+%pyproject_wheel
 
 %install
-rm -rf %{buildroot}
-%py3_install
+%pyproject_install
+%pyproject_save_files tuna
+# Install the tuna script
+install -D -m 0755 %{_builddir}/tuna-script %{buildroot}%{_bindir}/tuna
+# Install the compressed man page
+install -D -m 0644 %{_builddir}/tuna.8.gz %{buildroot}%{_mandir}/man8/tuna.8.gz
+
+# Remove oscilloscope (unsupported in RHEL)
+rm -f %{buildroot}/%{_bindir}/oscilloscope
+
 mkdir -p %{buildroot}/%{_sysconfdir}/tuna/
-mkdir -p %{buildroot}/{%{_bindir},%{_datadir}/tuna/help/kthreads,%{_mandir}/man8}
+mkdir -p %{buildroot}/%{_datadir}/tuna/help/kthreads
 mkdir -p %{buildroot}/%{_datadir}/polkit-1/actions/
 install -p -m644 tuna/tuna_gui.glade %{buildroot}/%{_datadir}/tuna/
-install -p -m755 tuna-cmd.py %{buildroot}/%{_bindir}/tuna
 install -p -m644 help/kthreads/* %{buildroot}/%{_datadir}/tuna/help/kthreads/
-install -p -m644 docs/tuna.8 %{buildroot}/%{_mandir}/man8/
 install -p -m644 etc/tuna/example.conf %{buildroot}/%{_sysconfdir}/tuna/
 install -p -m644 etc/tuna.conf %{buildroot}/%{_sysconfdir}/
 install -p -m644 org.tuna.policy %{buildroot}/%{_datadir}/polkit-1/actions/
@@ -71,18 +74,52 @@ done
 
 %find_lang %name
 
-%files -f %{name}.lang
+%files -f %{name}.lang -f %{pyproject_files}
 %doc ChangeLog
-%{python3_sitelib}/*.egg-info
 %{_bindir}/tuna
 %{_datadir}/tuna/
-%{python3_sitelib}/tuna/
-%{_mandir}/man8/tuna.8*
+%{_mandir}/man8/tuna.8.gz
 %{_sysconfdir}/tuna.conf
 %{_sysconfdir}/tuna/*
 %{_datadir}/polkit-1/actions/org.tuna.policy
 
 %changelog
+* Mon Jan 12 2026 John Kacur <jkacur@redhat.com> - 0.20-4
+- Disable tuna apply
+Resolves: RHEL-140840
+
+* Tue Nov 11 2025 John Kacur <jkacur@redhat.com> - 0.20-3
+- Rebuild for the rebase
+Resolves: RHEL-83080
+
+* Tue Nov 04 2025 John Kacur <jkacur@redhat.com> - 0.20-2
+- Add python3-pip, python3-setuptools, python3-wheel BuildRequires
+- Delete setup.py in %%prep so pyproject.toml build is used
+- Compress man page during %%prep similar to rteval
+- Install tuna script and compressed man page explicitly
+Resolves: RHEL-114902
+
+* Tue Oct 28 2025 John Kacur <jkacur@redhat.com> - 0.20-1
+- Update to upstream version 0.20
+- Convert spec file to use pyproject-rpm-macros
+- Use %%pyproject_buildrequires, %%pyproject_build, %%pyproject_install
+- Use %%pyproject_save_files for automatic file list generation
+- Remove oscilloscope (unsupported in RHEL)
+Resolves: RHEL-114902, RHEL-83080
+
+* Tue Oct 07 2025 John Kacur <jkacur@redhat.com> - 0.19-19
+- When a realtime scheduling policy is used, default the prio to 1
+Resolves: RHEL-93403
+
+* Mon Sep 29 2025 John Kacur <jkacur@redhat.com> - 0.19-18
+- Add -U and -K to the spread command
+- Add a few clean-ups
+Resolves:RHEL-108967
+
+* Thu Sep 18 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-17
+- Remove patches that disabled libcpupower functionality
+Resolves: RHEL-116084
+
 * Wed Aug 13 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-16
 - Revert tuna man page changes for cpu_power
 Resolves: RHEL-108936
@@ -100,7 +137,6 @@ Resolves: RHEL-107914 RHEL-106070 RHEL-93776 RHEL-106068
 
 * Thu Jul 31 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-13
 - Applied tuna: Fix help.py syntax warnings and tuna: help.py
-- Requested to remove resolves statement from previous entry.
 Resolves: RHEL-106290
 
 * Thu Jul 31 2025 John B. Wyatt IV <jwyatt@redhat.com> - 0.19-12

@@ -1,0 +1,54 @@
+From 959a16cefa6df216e42864534bc1eab9fd4d02c9 Mon Sep 17 00:00:00 2001
+From: John Kacur <jkacur@redhat.com>
+Date: Mon, 12 Jan 2026 15:23:05 -0500
+Subject: [PATCH 1/2] tuna: Disable the tuna apply functionality
+
+Currently tuned is the recommended way to apply a profile.
+Since tuna apply is currently broken, disabling it.
+
+Signed-off-by: John Kacur <jkacur@redhat.com>
+---
+ tuna-cmd.py | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/tuna-cmd.py b/tuna-cmd.py
+index 886824a4013c..6208bd116cea 100755
+--- a/tuna-cmd.py
++++ b/tuna-cmd.py
+@@ -150,8 +150,8 @@ def gen_parser():
+                                 help="Fork a new process and run the COMMAND")
+     save = subparser.add_parser('save', description="Save kthreads sched tunables to FILENAME",
+                                 help="Save kthreads sched tunables to FILENAME")
+-    apply = subparser.add_parser('apply', description="Apply changes described in profile",
+-                                help="Apply changes described in profile")
++    # apply = subparser.add_parser('apply', description="Apply changes described in profile",
++    #                             help="Apply changes described in profile")
+     show_threads = subparser.add_parser('show_threads', description='Show thread list', help='Show thread list')
+     show_irqs = subparser.add_parser('show_irqs', description='Show IRQ list', help='Show IRQ list')
+     show_configs = subparser.add_parser('show_configs', description='List preloaded profiles', help='List preloaded profiles')
+@@ -205,7 +205,7 @@ def gen_parser():
+     save_group.add_argument('-N', '--nohz_full', **MODS['nohz_full'])
+     save.add_argument('-t', '--threads', **MODS['threads'])
+ 
+-    apply.add_argument('profilename', **POS['profilename'])
++    # apply.add_argument('profilename', **POS['profilename'])
+ 
+     show_threads_group1 = show_threads.add_mutually_exclusive_group(required=False)
+     show_threads_group1.add_argument('-c', '--cpus', **MODS['cpus'])
+@@ -712,10 +712,10 @@ def main():
+     if 'nohz_full' in vars(args) and args.nohz_full:
+         args.cpu_list = nohz_full_to_cpu()
+ 
+-    if args.command in ['apply', 'a']:
+-        apply_config(args.profilename)
++    # if args.command in ['apply', 'a']:
++    #     apply_config(args.profilename)
+ 
+-    elif args.command in ['include', 'I']:
++    if args.command in ['include', 'I']:
+         tuna.include_cpus(args.cpu_list, utils.get_nr_cpus())
+ 
+     elif args.command in ['isolate', 'i']:
+-- 
+2.52.0
+
