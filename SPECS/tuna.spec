@@ -1,6 +1,6 @@
 Name: tuna
 Version: 0.20
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPL-2.0-only AND LGPL-2.1-only
 Summary: Application tuning GUI & command line utility
 URL: https://git.kernel.org/pub/scm/utils/tuna/tuna.git
@@ -15,6 +15,7 @@ Requires: python3-linux-procfs >= 0.6
 # Patches
 Patch1: tuna-Disable-the-tuna-apply-functionality.patch
 Patch2: tuna-Remove-tuna-apply-from-the-man-page.patch
+Patch3: tuna-Print-warning-if-setting-affinity-results-in-EP.patch
 
 %description
 Provides interface for changing scheduler and IRQ tunables, at whole CPU and at
@@ -72,6 +73,10 @@ done
 %{_datadir}/polkit-1/actions/org.tuna.policy
 
 %changelog
+* Tue May 19 2026 John Kacur <jkacur@redhat.com> - 0.20-3
+- Print warning if setting affinity results in EPERM and continue
+Resolves: RHEL-174229
+
 * Mon Jan 12 2026 John Kacur <jkacur@redhat.com> - 0.20-2
 - Disable tuna apply
 Resolves: RHEL-140839
